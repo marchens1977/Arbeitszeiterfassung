@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arbeitszeit 2027</title>
+<style>
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;padding:12px;background:#f4f6f9;color:#333}
+.tabs{display:flex;background:#e2e8f0;border-radius:8px;padding:4px;margin-bottom:12px;overflow-x:auto}
+.tab{flex:1;padding:10px 4px;border:0;background:none;border-radius:6px;font-size:.8rem;color:#475569;white-space:nowrap;cursor:pointer}
+.tab.active{background:#fff;color:#1e293b;box-shadow:0 1px 3px rgba(0,0,0,.1);font-weight:600}
+.pg{display:none}.pg.active{display:block}
+.card{background:#fff;padding:14px;border-radius:10px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+h2{font-size:1.05rem;margin:0 0 8px}
+label{display:block;margin-top:10px;font-size:.85rem;color:#555}
+input,select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #d5d9e0;border-radius:6px;font-size:.95rem;background:#fff;margin-top:2px}
+input:disabled,select:disabled{background:#f8fafc;color:#64748b;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:6px 4px;border-bottom:1px solid #e2e8f0;text-align:left}
+td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
+.sum td{font-weight:700;background:#f8fafc}
+.box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;margin-top:10px;line-height:1.7}
+.r{text-align:right}
+.note{font-size:.8rem;color:#64748b;margin:6px 0 0}
+.future-row{background-color:#e6f4ea !important}
+.btn{width:100%;padding:10px;border:0;border-radius:6px;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:12px}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-success{background:#16a34a;color:#fff}
+.info-txt{font-size:0.75rem;color:#64748b;display:block;margin-top:2px;}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
+.mini-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;}
+.mini-card span{display:block;font-size:.75rem;color:#64748b;}
+.mini-card strong{display:block;font-size:1.1rem;margin-top:4px;color:#1e293b;}
+.month-summary-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;font-size:.9rem;font-weight:600;}
+.top-action-bar{display:flex;justify-content:flex-end;margin-bottom:8px;}
+.btn-sm{width:auto;padding:6px 14px;font-size:.85rem;margin-top:0;}
+.month-header-row td{background:#e2e8f0;font-weight:700;color:#1e293b;padding:8px 4px;}
+</style>
+</head>
+<body>
+<div class="tabs">
+  <button type="button" class="tab active" onclick="showTab(0)">1. Stammdaten</button>
+  <button type="button" class="tab" onclick="showTab(1)">2. Urlaub</button>
+  <button type="button" class="tab" onclick="showTab(2)">3. Musterwoche</button>
+  <button type="button" class="tab" onclick="showTab(3)">4. Dateneingabe</button>
+  <button type="button" class="tab" onclick="showTab(4)">5. Ausgabe</button>
+</div>
+
+<div class="pg active" id="pg0">
+  <div class="card">
+    <div class="top-action-bar">
+      <button type="button" id="mainBtn0" class="btn btn-primary btn-sm" onclick="toggleEdit0()">Ändern</button>
+    </div>
+    <h2>Stammdaten & Monatliche vertragliche Arbeitszeit 2027</h2>
+    <p class="note">Erfasse hier den zustehenden Urlaubsanspruch, den Übertrag aus dem Vorjahr, Sondervereinbarungen sowie die monatliche vertragliche Arbeitszeit-Basis.</p>
+    
+    <label for="vac">Urlaubsanspruch (Tage)</label>
+    <input id="vac" type="text" inputmode="decimal" disabled>
+    
+    <label for="ct" style="margin-top:12px; font-weight:600;">Übertrag aus dem Vorjahr:</label>
+    <select id="ct" disabled style="margin-top:2px;">
+      <option value="plus">Plusstunden (Abzug)</option>
+      <option value="minus">Minusstunden (Zuschlag)</option>
+    </select>
+    <input id="cv" type="text" placeholder="00:00:00" disabled style="margin-top:4px;">
+
+    <label for="agreedOt" style="margin-top:12px; font-weight:600;">vereinbarte Überstunden 2027 (positiver Wert):</label>
+    <input id="agreedOt" type="text" placeholder="00:00:00" disabled style="margin-top:2px;">
+
+    <label for="unpaidVac" style="margin-top:12px; font-weight:600;">unbezahlter Urlaub in 2027 (negativer Wert):</label>
+    <input id="unpaidVac" type="text" placeholder="00:00:00" disabled style="margin-top:2px;">
+
+    <h3 style="font-size:0.95rem; margin-top:16px;">Monatliche vertragliche Arbeitszeit & Orientierungswerte</h3>
+    <table>
+      <thead><tr><th>Monat</th><th>Vertragliche Jahres-Basis (Std) / Orientierung</th></tr></thead>
+      <tbody id="monthlyAnnualBody"></tbody>
+    </table>
+
+    <div class="box" id="sm0"></div>
+  </div>
+</div>
+
+<div class="pg" id="pg1">
+  <div class="card">
+    <h2>Urlaubsübersicht & Abgleich</h2>
+    <p class="note">Übersicht über den zustehenden Urlaub, genommene Tage und Stunden sowie den Saldo.</p>
+    <div class="grid-cards" id="vacCards"></div>
+    <table>
+      <thead><tr><th>Monat</th><th class="r">Genommene Tage</th><th class="r">Genommene Stunden</th></tr></thead>
+      <tbody id="vacMonthBody"></tbody>
+    </table>
+    <div class="box" id="vacSummaryBox"></div>
+  </div>
+</div>
+
+<div class="pg" id="pg2">
+  <div class="card">
+    <div class="top-action-bar">
+      <button type="button" id="mainBtn2" class="btn btn-primary btn-sm" onclick="toggleEdit2()">Ändern</button>
+    </div>
+    <h2>Musterwoche (Montag bis Freitag)</h2>
+    <p class="note">Ende ist fix um 19:00 Uhr. Änderungen wirken sich automatisch und sicher nur auf zukünftige, noch nicht manuell erfasste Tage aus.</p>
+    <table>
+      <thead><tr><th>Wochentag</th><th>Start / Status</th><th>Pause</th><th class="r">Netto (Richtwert)</th></tr></thead>
+      <tbody id="patternBody"></tbody>
+    </table>
+
+    <div class="box" id="patternSumBox"></div>
+  </div>
+</div>
+
+<div class="pg" id="pg3">
+  <div class="card">
+    <div class="top-action-bar">
+      <button type="button" id="mainBtn3" class="btn btn-primary btn-sm" onclick="toggleEdit3()">Ändern</button>
+    </div>
+    <h2>Dateneingabe 2027</h2>
+    <p class="note" style="margin-bottom:10px;">Hessische Feiertage und der automatische Urlaub sind vorbelegt. Erfassung erfolgt über Start und Pause für das gesamte Jahr.</p>
+    
+    <div class="month-summary-box" id="monthSummaryBox"></div>
+
+    <table>
+      <thead><tr><th>Tag</th><th>Start / Status</th><th>Pause</th><th class="r">Netto (Plan)</th></tr></thead>
+      <tbody id="dayBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="pg" id="pg4">
+  <div class="card">
+    <div class="top-action-bar">
+      <button type="button" id="mainBtn4" class="btn btn-primary btn-sm" onclick="toggleEdit4()">Ändern</button>
+    </div>
+    <h2>Auswertung & Jahresbilanz</h2>
+    <p class="note">Hier siehst du die aus deiner Dateneingabe ermittelten Monatswerte und kannst daneben die Werte gemäß Stundenabrechnung 057 eintragen.</p>
+    <table>
+      <thead><tr><th>Monat</th><th class="r">Plan (Dateneingabe)</th><th class="r">Gemäß Stundenabrechnung 057</th></tr></thead>
+      <tbody id="outBody"></tbody>
+    </table>
+    <div class="box" id="sm3"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const Y = 2027;
+const KEY = 'arbeitszeit_hessen_persistence_v1';
+const MN = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const WD = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+const FIXED_END_SEC = 19 * 3600;
+
+const holidays2027 = {
+  '2027-01-01': 'Neujahr',
+  '2027-03-26': 'Karfreitag',
+  '2027-03-29': 'Ostermontag',
+  '2027-05-01': 'Tag der Arbeit',
+  '2027-05-06': 'Christi Himmelfahrt',
+  '2027-05-17': 'Pfingstmontag',
+  '2027-05-27': 'Fronleichnam',
+  '2027-10-03': 'Tag der Deutschen Einheit',
+  '2027-12-25': '1. Weihnachtstag',
+  '2027-12-26': '2. Weihnachtstag'
+};
+
+const defaultVacations = [
+  '2027-03-15','2027-03-16','2027-03-17','2027-03-18','2027-03-19',
+  '2027-03-22','2027-03-23','2027-03-24','2027-03-25','2027-03-26',
+  '2027-06-14','2027-06-15','2027-06-16','2027-06-17','2027-06-18',
+  '2027-06-21','2027-06-22','2027-06-23','2027-06-24','2027-06-25',
+  '2027-10-11','2027-10-12','2027-10-13','2027-10-14','2027-10-15',
+  '2027-10-18','2027-10-19','2027-10-20','2027-10-21','2027-10-22'
+];
+
+/* ========================================================================= */
+/* 1. HILFSFUNKTIONEN                                                        */
+/* ========================================================================= */
+
+const pad = n => String(n).padStart(2, '0');
+const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+function num(v) {
+  const parsed = Number.parseFloat(String(v ?? '').trim().replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+const fmtT = totalSec => {
+  if (isNaN(totalSec) || totalSec === null || totalSec === undefined) return '00:00:00';
+  const sign = totalSec < 0 ? '-' : '';
+  const a = Math.abs(Math.round(totalSec));
+  const h = Math.floor(a / 3600);
+  const m = Math.floor((a % 3600) / 60);
+  const s = a % 60;
+  return `${sign}${h}:${pad(m)}:${pad(s)}`;
+};
+
+function formatHMSInput(val) {
+  if (!val) return '00:00:00';
+  const clean = String(val).trim();
+  const isNeg = clean.startsWith('-');
+  const cleanPos = clean.replace('-', '');
+  const parts = cleanPos.split(':');
+  let formatted = '';
+  if (parts.length === 1) {
+    formatted = `${pad(parts[0])}:00:00`;
+  } else if (parts.length === 2) {
+    formatted = `${pad(parts[0])}:${pad(parts[1])}:00`;
+  } else if (parts.length >= 3) {
+    formatted = `${pad(parts[0])}:${pad(parts[1])}:${pad(parts[2])}`;
+  } else {
+    formatted = '00:00:00';
+  }
+  return isNeg ? '-' + formatted : formatted;
+}
+
+const toSec = s => { 
+  if (!s) return 0; 
+  if (typeof s === 'number') return Math.round(s);
+  const cleanStr = String(s).trim();
+  const isNeg = cleanStr.startsWith('-');
+  const parts = cleanStr.replace('-', '').split(':'); 
+  let sec = 0;
+  if (parts.length === 3) { 
+    sec = (+parts[0] * 3600) + (+parts[1] * 60) + +parts[2]; 
+  } else if (parts.length === 2) { 
+    sec = (+parts[0] * 3600) + (+parts[1] * 60); 
+  } else {
+    sec = Math.round(num(cleanStr) * 3600);
+    return sec;
+  }
+  return isNeg ? -sec : sec;
+};
+
+function getMonthAnnualSec(monthIdx) {
+  let val = 2028;
+  for (let i = 0; i <= monthIdx; i++) {
+    if (st.monthlyAnnual[i] !== undefined && st.monthlyAnnual[i] !== '') {
+      val = num(st.monthlyAnnual[i]);
+    }
+  }
+  return Math.round(val * 3600);
+}
+
+const annualSecSum = () => {
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += getMonthAnnualSec(i) / 12;
+  }
+  return Math.round(sum);
+};
+
+function dayTargetSecForMonth(monthIdx) {
+  const annualHours = getMonthAnnualSec(monthIdx) / 3600;
+  const weeklyHours = annualHours / 52;
+  const dailyHours = weeklyHours / 5;
+  return Math.round(dailyHours * 3600);
+}
+
+function calcNetSec(s, p, monthIdx) {
+  if (!s) return 0;
+  if (s === 'U' || s === 'F') return dayTargetSecForMonth(monthIdx);
+  if (s === 'X') return 0;
+  const sm = toSec(s);
+  const pm = (parseInt(p, 10) || 0) * 60;
+  return Math.max(0, FIXED_END_SEC - sm - pm);
+}
+
+function getDayData(d) {
+  if (st.days[d.k]) return st.days[d.k];
+  if (holidays2027[d.k]) return { s: 'F', p: '0' };
+  if (defaultVacations.includes(d.k)) return { s: 'U', p: '0' };
+  const p = st.pattern[d.w] || { s: '11:00', p: '30' };
+  return { s: p.s, p: p.p };
+}
+
+/* ========================================================================= */
+/* 2. DATEN INITIALISIEREN                                                   */
+/* ========================================================================= */
+
+const days = [];
+for (let d = new Date(Y, 0, 1); d.getFullYear() === Y; d.setDate(d.getDate() + 1)) {
+  const w = d.getDay();
+  if (w !== 0 && w !== 6) {
+    days.push({ 
+      k: `${Y}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, 
+      m: d.getMonth(), 
+      w: w, 
+      dd: pad(d.getDate()), 
+      dateObj: new Date(d) 
+    });
+  }
+}
+
+let st = {
+  vac: '30', 
+  ct: 'plus', 
+  cv: '00:00:00',
+  monthlyAnnual: new Array(12).fill('2028'),
+  pattern: null,
+  days: {},
+  monthlyActual: {},
+  agreedOt: '00:00:00',
+  unpaidVac: '00:00:00'
+};
+
+try {
+  let loaded = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (!loaded) {
+    for (let i = 1; i <= 20; i++) {
+      let oldData = localStorage.getItem(`arbeitszeit_hessen_v${i}_fix_eval`);
+      if (!oldData) oldData = localStorage.getItem(`arbeitszeit_hessen_v${i}`);
+      if (oldData) { loaded = JSON.parse(oldData); break; }
+    }
+  }
+  if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
+    Object.assign(st, loaded);
+    if (loaded.annual !== undefined && (!Array.isArray(loaded.monthlyAnnual) || loaded.monthlyAnnual.length === 0)) {
+      st.monthlyAnnual = new Array(12).fill(String(loaded.annual));
+    }
+  }
+} catch (e) {}
+
+if (!Array.isArray(st.monthlyAnnual)) st.monthlyAnnual = new Array(12).fill('2028');
+st.monthlyAnnual = Array.from({ length: 12 }, (_, i) => st.monthlyAnnual[i] == null ? '' : String(st.monthlyAnnual[i]));
+if (!st.days || typeof st.days !== 'object' || Array.isArray(st.days)) st.days = {};
+if (!st.monthlyActual || typeof st.monthlyActual !== 'object' || Array.isArray(st.monthlyActual)) st.monthlyActual = {};
+if (!st.pattern || typeof st.pattern !== 'object' || Array.isArray(st.pattern)) st.pattern = null;
+st.vac = st.vac == null ? '30' : String(st.vac);
+st.ct = st.ct === 'minus' ? 'minus' : 'plus';
+st.cv = st.cv == null ? '00:00:00' : String(st.cv);
+st.agreedOt = st.agreedOt == null ? '00:00:00' : String(st.agreedOt);
+st.unpaidVac = st.unpaidVac == null ? '00:00:00' : String(st.unpaidVac);
+
+if (!st.pattern) {
+  const initialAnnualSec = getMonthAnnualSec(0);
+  const initialWeeklySec = initialAnnualSec / 52;
+  const targetDailyNetSec = initialWeeklySec / 5;
+  const defaultPauseMin = 30;
+  const startSec = FIXED_END_SEC - targetDailyNetSec - (defaultPauseMin * 60);
+  const constrainedStartSec = Math.max(startSec, 11 * 3600);
+  const startHour = Math.floor(constrainedStartSec / 3600);
+  const startMin = Math.floor((constrainedStartSec % 3600) / 60);
+  const roundedMin = Math.round(startMin / 15) * 15;
+  const startTimeStr = `${pad(startHour)}:${pad(roundedMin >= 60 ? 0 : roundedMin)}`;
+  st.pattern = {
+    1: { s: startTimeStr, p: String(defaultPauseMin) },
+    2: { s: startTimeStr, p: String(defaultPauseMin) },
+    3: { s: startTimeStr, p: String(defaultPauseMin) },
+    4: { s: startTimeStr, p: String(defaultPauseMin) },
+    5: { s: startTimeStr, p: String(defaultPauseMin) }
+  };
+}
+
+function save() { 
+  try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} 
+}
+
+/* ========================================================================= */
+/* 3. LOGIK UND ANZEIGE                                                      */
+/* ========================================================================= */
+
+function daySec(d) {
+  const dat = getDayData(d);
+  return calcNetSec(dat.s, dat.p, d.m);
+}
+
+function monthPlanNetTotals() {
+  const t = new Array(12).fill(0);
+  days.forEach(d => {
+    const dat = getDayData(d);
+    if (dat.s !== 'U') {
+      t[d.m] += calcNetSec(dat.s, dat.p, d.m);
+    }
+  });
+  return t;
+}
+
+function monthActualNetTotals() {
+  const planNet = monthPlanNetTotals();
+  const t = new Array(12).fill(0);
+  for (let i = 0; i < 12; i++) {
+    if (st.monthlyActual[i] !== undefined && st.monthlyActual[i] !== '') {
+      t[i] = toSec(st.monthlyActual[i]);
+    } else {
+      t[i] = planNet[i];
+    }
+  }
+  return t;
+}
+
+function showTab(i) {
+  document.querySelectorAll('.tab').forEach((t, j) => t.classList.toggle('active', i === j));
+  document.querySelectorAll('.pg').forEach((p, j) => p.classList.toggle('active', i === j));
+  if (i === 0) { renderMonthlyAnnualTable(); summary0(); }
+  if (i === 1) renderVacationTab();
+  if (i === 2) renderPattern();
+  if (i === 3) renderDays();
+  if (i === 4) renderOut();
+}
+
+let editing0 = false;
+function toggleEdit0() {
+  editing0 = !editing0;
+  const btn = document.getElementById('mainBtn0');
+  btn.textContent = editing0 ? 'Speichern' : 'Ändern';
+  btn.className = editing0 ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
+  for (let i = 0; i < 12; i++) {
+    document.getElementById(`m_annual_${i}`).disabled = !editing0;
+  }
+  document.getElementById('vac').disabled = !editing0;
+  document.getElementById('ct').disabled = !editing0;
+  document.getElementById('cv').disabled = !editing0;
+  document.getElementById('agreedOt').disabled = !editing0;
+  document.getElementById('unpaidVac').disabled = !editing0;
+
+  if (!editing0) {
+    for (let i = 0; i < 12; i++) {
+      st.monthlyAnnual[i] = document.getElementById(`m_annual_${i}`).value;
+    }
+    st.vac = document.getElementById('vac').value;
+    st.ct = document.getElementById('ct').value;
+    st.cv = formatHMSInput(document.getElementById('cv').value);
+    st.agreedOt = formatHMSInput(document.getElementById('agreedOt').value);
+    st.unpaidVac = formatHMSInput(document.getElementById('unpaidVac').value);
+
+    document.getElementById('cv').value = st.cv;
+    document.getElementById('agreedOt').value = st.agreedOt;
+    document.getElementById('unpaidVac').value = st.unpaidVac;
+    save();
+    renderMonthlyAnnualTable();
+    summary0();
+  }
+}
+
+let editing2 = false;
+function toggleEdit2() {
+  editing2 = !editing2;
+  const btn = document.getElementById('mainBtn2');
+  btn.textContent = editing2 ? 'Speichern' : 'Ändern';
+  btn.className = editing2 ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
+  renderPattern();
+  if (!editing2) save();
+}
+
+let editing3 = false;
+function toggleEdit3() {
+  editing3 = !editing3;
+  const btn = document.getElementById('mainBtn3');
+  btn.textContent = editing3 ? 'Speichern' : 'Ändern';
+  btn.className = editing3 ? 'btn btn-success btn-sm' : 'btn primary btn-sm';
+  renderDays();
+  if (!editing3) { save(); summary0(); }
+}
+
+let editing4 = false;
+function toggleEdit4() {
+  editing4 = !editing4;
+  const btn = document.getElementById('mainBtn4');
+  btn.textContent = editing4 ? 'Speichern' : 'Ändern';
+  btn.className = editing4 ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
+  renderOut();
+  if (!editing4) save();
+}
+
+function renderMonthlyAnnualTable() {
+  let html = '';
+  MN.forEach((mName, i) => {
+    const val = st.monthlyAnnual[i] !== undefined ? st.monthlyAnnual[i] : '2028';
+    const annualHours = num(val);
+    const monthSec = (annualHours * 3600) / 12;
+    const weeklyHours = annualHours / 52;
+    const weekSec = Math.round(weeklyHours * 3600);
+    const daySecVal = dayTargetSecForMonth(i);
+    html += `<tr>
+      <td>${mName}</td>
+      <td>
+        <input type="text" id="m_annual_${i}" value="${esc(val)}" inputmode="decimal" ${editing0 ? '' : 'disabled'} style="text-align:right;" oninput="updateMonthlyInfo(${i})">
+        <span class="info-txt" id="info_${i}">
+          Regel-Monat: <b>${fmtT(monthSec)}</b> | Regel-Woche: <b>${fmtT(weekSec)}</b> | Regel-Tag: <b>${fmtT(daySecVal)}</b>
+        </span>
+      </td>
+    </tr>`;
+  });
+  document.getElementById('monthlyAnnualBody').innerHTML = html;
+}
+
+function updateMonthlyInfo(i) {
+  const inputVal = document.getElementById(`m_annual_${i}`).value;
+  const annualHours = num(inputVal);
+  const monthSec = (annualHours * 3600) / 12;
+  const weeklyHours = annualHours / 52;
+  const weekSec = Math.round(weeklyHours * 3600);
+  const daySecVal = dayTargetSecForMonth(i);
+  document.getElementById(`info_${i}`).innerHTML = 
+    `Regel-Monat: <b>${fmtT(monthSec)}</b> | Regel-Woche: <b>${fmtT(weekSec)}</b> | Regel-Tag: <b>${fmtT(daySecVal)}</b>`;
+}
+
+function summary0() {
+  const contractSec = annualSecSum();
+  const totalClaimDays = Math.max(0, num(st.vac));
+  let totalClaimSec = 0;
+  days.forEach(d => { totalClaimSec += dayTargetSecForMonth(d.m); });
+  const avgDaySec = totalClaimSec / days.length;
+  const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
+  const carrySec = toSec(st.cv);
+  const agreedOtSec = Math.abs(toSec(st.agreedOt));
+  const unpaidVacSec = Math.abs(toSec(st.unpaidVac));
+  const nettoSec = contractSec - totalClaimHoursSec + (st.ct === 'plus' ? -carrySec : carrySec) + agreedOtSec - unpaidVacSec;
+
+  document.getElementById('sm0').innerHTML =
+    `Vertragliche Arbeitszeit: <b>${fmtT(contractSec)}</b><br>` +
+    `− Zustehender Urlaub (${totalClaimDays} Tage): <b>${fmtT(totalClaimHoursSec)}</b><br>` +
+    `${st.ct === 'plus' ? '−' : '+'} Übertrag aus Vorjahr: <b>${fmtT(carrySec)}</b><br>` +
+    `+ vereinbarte Überstunden 2027 (positiver Wert): <b>${fmtT(agreedOtSec)}</b><br>` +
+    `− unbezahlter Urlaub in 2027 (negativer Wert): <b>${fmtT(unpaidVacSec)}</b><br>` +
+    `= <b>Vertraglich zu erfüllende Nettoarbeitszeit (Soll):</b> <b>${fmtT(nettoSec)}</b>`;
+}
+
+function renderVacationTab() {
+  const totalClaimDays = Math.max(0, num(st.vac));
+  let takenDaysCount = 0;
+  let takenSecTotal = 0;
+  let totalClaimSec = 0;
+  days.forEach(d => {
+    totalClaimSec += dayTargetSecForMonth(d.m);
+    if (getDayData(d).s === 'U') {
+      takenDaysCount++;
+      takenSecTotal += dayTargetSecForMonth(d.m);
+    }
+  });
+  const avgDaySec = totalClaimSec / days.length;
+  const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
+  const remainingDays = totalClaimDays - takenDaysCount;
+  const remainingSec = totalClaimHoursSec - takenSecTotal;
+  document.getElementById('vacCards').innerHTML = `
+    <div class="mini-card"><span>Zustehender Urlaub</span><strong>${totalClaimDays} Tage</strong></div>
+    <div class="mini-card"><span>Genommener Urlaub</span><strong>${takenDaysCount} Tage</strong></div>
+    <div class="mini-card"><span>Verbleibender Urlaub</span><strong>${remainingDays} Tage</strong></div>
+  `;
+  let monthHtml = '';
+  let sumMonthDays = 0;
+  let sumMonthSec = 0;
+  MN.forEach((mName, i) => {
+    const mDays = days.filter(d => d.m === i && getDayData(d).s === 'U');
+    let mSec = 0;
+    mDays.forEach(d => mSec += dayTargetSecForMonth(d.m));
+    sumMonthDays += mDays.length;
+    sumMonthSec += mSec;
+    monthHtml += `<tr>
+      <td>${mName}</td>
+      <td class="r">${mDays.length} Tage</td>
+      <td class="r">${fmtT(mSec)}</td>
+    </tr>`;
+  });
+  monthHtml += `<tr class="sum">
+    <td>Summe</td>
+    <td class="r">${sumMonthDays} Tage</td>
+    <td class="r">${fmtT(sumMonthSec)}</td>
+  </tr>`;
+  document.getElementById('vacMonthBody').innerHTML = monthHtml;
+  document.getElementById('vacSummaryBox').innerHTML =
+    `<b>Urlaubsabgleich Gesamtjahr:</b><br>` +
+    `• Zustehender Urlaub: <b>${totalClaimDays} Tage</b> (${fmtT(totalClaimHoursSec)})<br>` +
+    `• Bereits genommen: <b>${takenDaysCount} Tage</b> (${fmtT(takenSecTotal)})<br>` +
+    `• Resturlaub: <b>${remainingDays} Tage</b> (${fmtT(remainingSec)})`;
+}
+
+const timeOpts = [['U', 'Urlaub'], ['F', 'Feiertag'], ['X', 'Frei']];
+for (let m = 5 * 60; m <= 18 * 60; m += 15) {
+  timeOpts.push([`${pad(Math.floor(m / 60))}:${pad(m % 60)}`, `${pad(Math.floor(m / 60))}:${pad(m % 60)}`]);
+}
+const pauseOpts = [0, 15, 30, 45, 60, 75, 90, 120].map(p => [String(p), p + ' Min']);
+const opts = (list, sel) => list.map(o => `<option value="${o[0]}"${o[0] === sel ? ' selected' : ''}>${o[1]}</option>`).join('');
+
+function renderPattern() {
+  const pNames = {1:'Montag', 2:'Dienstag', 3:'Mittwoch', 4:'Donnerstag', 5:'Freitag'};
+  let html = '';
+  let weekSum = 0;
+  for (let i = 1; i <= 5; i++) {
+    const p = st.pattern[i] || { s: '11:00', p: '30' };
+    const net = calcNetSec(p.s, p.p, 0);
+    weekSum += net;
+    if (editing2) {
+      html += `<tr><td>${pNames[i]}</td>
+        <td><select onchange="setPattern(${i},'s',this.value)">${opts(timeOpts, p.s)}</select></td>
+        <td><select onchange="setPattern(${i},'p',this.value)">${opts(pauseOpts, p.p)}</select></td>
+        <td class="r">${fmtT(net)}</td></tr>`;
+    } else {
+      html += `<tr><td>${pNames[i]}</td>
+        <td>${p.s === 'U' ? 'Urlaub' : p.s === 'F' ? 'Feiertag' : p.s === 'X' ? 'Frei' : esc(p.s)}</td>
+        <td>${esc(p.p)} Min</td>
+        <td class="r">${fmtT(net)}</td></tr>`;
+    }
+  }
+  document.getElementById('patternBody').innerHTML = html;
+  document.getElementById('patternSumBox').innerHTML = `Wochenarbeitszeit gesamt (Richtwert): <b>${fmtT(weekSum)}</b>`;
+}
+
+function setPattern(dayNum, field, val) {
+  if (!st.pattern[dayNum]) { st.pattern[dayNum] = { s: '11:00', p: '30' }; }
+  st.pattern[dayNum][field] = val;
+  if (field === 's' && (val === 'U' || val === 'F' || val === 'X')) { st.pattern[dayNum].p = '0'; }
+  save(); renderPattern();
+}
+
+function renderDays() {
+  const today = new Date();
+  let rowsHtml = '';
+  let yearTotalSec = 0;
+  let currentMonth = -1;
+
+  days.forEach(d => {
+    if (d.m !== currentMonth) {
+      currentMonth = d.m;
+      rowsHtml += `<tr class="month-header-row"><td colspan="4">${MN[currentMonth]} ${Y}</td></tr>`;
+    }
+
+    const dat = getDayData(d);
+    const planSec = calcNetSec(dat.s, dat.p, d.m);
+    let daySecVal = 0;
+    if (dat.s !== 'U') daySecVal = planSec;
+    if (st.days[d.k]) {
+      const customDat = st.days[d.k];
+      daySecVal = calcNetSec(customDat.s, customDat.p, d.m);
+    }
+    if (dat.s === 'U') daySecVal = 0;
+    yearTotalSec += daySecVal;
+
+    const isFuture = d.dateObj >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const rowClass = isFuture ? 'future-row' : '';
+    let dayLabel = `${WD[d.w]} ${d.dd}.${pad(d.m + 1)}.`;
+    if (holidays2027[d.k]) dayLabel += ` <span style="font-size:0.75rem; color:#dc2626;">(${holidays2027[d.k]})</span>`;
+    
+    if (editing3) {
+      rowsHtml += `<tr class="${rowClass}"><td>${dayLabel}</td>
+        <td><select onchange="setDay('${d.k}','s',this.value)">${opts(timeOpts, dat.s)}</select></td>
+        <td><select id="p_${d.k}" onchange="setDay('${d.k}','p',this.value)">${opts(pauseOpts, dat.p)}</select></td>
+        <td class="r">${fmtT(planSec)}</td></tr>`;
+    } else {
+      rowsHtml += `<tr class="${rowClass}"><td>${dayLabel}</td>
+        <td>${dat.s === 'U' ? 'Urlaub' : dat.s === 'F' ? 'Feiertag' : dat.s === 'X' ? 'Frei' : esc(dat.s)}</td>
+        <td>${esc(dat.p)} Min</td>
+        <td class="r">${fmtT(planSec)}</td></tr>`;
+    }
+  });
+
+  document.getElementById('monthSummaryBox').innerHTML = 
+    `<span>Jahressumme (Gesamte Dateneingabe)</span><span><b>${fmtT(yearTotalSec)}</b></span>`;
+  document.getElementById('dayBody').innerHTML = rowsHtml;
+}
+
+function setDay(k, f, v) {
+  const dObj = days.find(x => x.k === k);
+  if (f === 's' && v === 'U') {
+    const currentVacCount = days.filter(d => getDayData(d).s === 'U' && d.k !== k).length;
+    const maxVac = Math.max(0, num(st.vac));
+    if (currentVacCount >= maxVac) {
+      alert(`Der maximale Urlaubsanspruch von ${maxVac} Tagen ist bereits erreicht!`);
+      renderDays();
+      return;
+    }
+  }
+  if (!st.days[k]) { const dat = getDayData(dObj); st.days[k] = { s: dat.s, p: dat.p }; }
+  if (f === 's' && (v === 'U' || v === 'F' || v === 'X')) {
+    st.days[k].s = v;
+    st.days[k].p = '0';
+    const pSel = document.getElementById('p_' + k);
+    if (pSel) pSel.value = '0';
+  } else {
+    st.days[k][f] = v;
+  }
+  save(); renderDays(); summary0();
+}
+
+window.setMonthlyActual = function(monthIdx, val) {
+  const raw = String(val).trim();
+  if (raw === '') { delete st.monthlyActual[monthIdx]; } else { st.monthlyActual[monthIdx] = raw; }
+  save(); renderOut();
+};
+
+function renderOut() {
+  const planNetTotals = monthPlanNetTotals();
+  const totalPlanNet = planNetTotals.reduce((a, b) => a + b, 0);
+  const actualNetTotals = monthActualNetTotals();
+  const baseTotalActualNet = actualNetTotals.reduce((a, b) => a + b, 0);
+  const agreedOtSec = Math.abs(toSec(st.agreedOt));
+  const unpaidVacSec = Math.abs(toSec(st.unpaidVac));
+  
+  const totalActualNet = baseTotalActualNet;
+
+  let html = '';
+  for (let i = 0; i < 12; i++) {
+    const planVal = fmtT(planNetTotals[i]);
+    const actualVal = st.monthlyActual[i] !== undefined ? st.monthlyActual[i] : planVal;
+    const formattedActualVal = typeof actualVal === 'string' && actualVal.includes(':') ? actualVal : fmtT(toSec(actualVal));
+    if (editing4) {
+      html += `<tr>
+        <td>${MN[i]}</td>
+        <td class="r">${planVal}</td>
+        <td><input type="text" value="${esc(formattedActualVal)}" onchange="setMonthlyActual(${i}, this.value)" style="text-align:right;"></td>
+      </tr>`;
+    } else {
+      html += `<tr>
+        <td>${MN[i]}</td>
+        <td class="r">${planVal}</td>
+        <td class="r">${esc(formattedActualVal)}</td>
+      </tr>`;
+    }
+  }
+
+  html += `<tr class="sum">
+    <td>Summe (Dateneingabe / Abrechnung 057)</td>
+    <td class="r">${fmtT(totalPlanNet)}</td>
+    <td class="r">${fmtT(baseTotalActualNet)}</td>
+  </tr>`;
+
+  document.getElementById('outBody').innerHTML = html;
+
+  const contractSec = annualSecSum();
+  let totalClaimSec = 0;
+  days.forEach(d => { totalClaimSec += dayTargetSecForMonth(d.m); });
+  const avgDaySec = totalClaimSec / days.length;
+  const totalClaimDays = Math.max(0, num(st.vac));
+  const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
+  let takenDaysCount = 0;
+  let takenSecTotal = 0;
+  days.forEach(d => {
+    if (getDayData(d).s === 'U') { takenDaysCount++; takenSecTotal += dayTargetSecForMonth(d.m); }
+  });
+  const carrySec = toSec(st.cv);
+  const nettoTargetSec = contractSec - totalClaimHoursSec + (st.ct === 'plus' ? -carrySec : carrySec) + agreedOtSec - unpaidVacSec;
+  const diff = nettoTargetSec - totalActualNet;
+  let diffText = '';
+  if (diff > 0) diffText = `zu wenig geleistet (${fmtT(diff)})`;
+  else if (diff < 0) diffText = `zu viel geleistet (${fmtT(-diff)})`;
+  else diffText = `Soll exakt erfüllt (${fmtT(0)})`;
+
+  document.getElementById('sm3').innerHTML =
+    `Vertragliche Arbeitszeit: <b>${fmtT(contractSec)}</b><br>` +
+    `Vertraglicher Urlaub: <b>${totalClaimDays} Tage</b> (${fmtT(totalClaimHoursSec)})<br>` +
+    `Genommener Urlaub: <b>${takenDaysCount} Tage</b> (${fmtT(takenSecTotal)})<br>` +
+    `vereinbarte Überstunden 2027 (positiver Wert): <b>${fmtT(agreedOtSec)}</b><br>` +
+    `unbezahlter Urlaub in 2027 (negativer Wert): <b>${fmtT(unpaidVacSec)}</b><br>` +
+    `<b>Vertraglich zu erfüllende Nettoarbeitszeit (Soll):</b> <b>${fmtT(nettoTargetSec)}</b><br>` +
+    `<b>Tatsächlich geleistete Nettoarbeitszeit (Dateneingabe):</b> <b>${fmtT(totalActualNet)}</b><br>` +
+    `Differenz: <b>(${diffText})</b>`;
+}
+
+document.getElementById('vac').value = st.vac;
+document.getElementById('ct').value = st.ct;
+document.getElementById('cv').value = st.cv;
+document.getElementById('agreedOt').value = st.agreedOt;
+document.getElementById('unpaidVac').value = st.unpaidVac;
+
+renderMonthlyAnnualTable();
+summary0();
+renderPattern();
+</script>
+</body>
+</html>
