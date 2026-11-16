@@ -93,13 +93,34 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
   <div class="card">
     <h2>Datensicherung</h2>
     <p class="note">Deine Daten liegen nur in diesem Browser auf diesem Gerät. Lade regelmäßig eine Sicherungsdatei herunter, damit nichts verloren geht (z.&nbsp;B. bei Gerätewechsel oder wenn Browserdaten gelöscht werden).</p>
+    <p class="note" id="lastBackupInfo"></p>
+
+    <h3>Als Datei</h3>
     <div class="actions">
       <button type="button" class="btn btn-primary" onclick="exportData()">Sicherung herunterladen</button>
       <button type="button" class="btn btn-primary" id="shareBtn" onclick="shareData()" style="display:none">Sicherung teilen</button>
-      <button type="button" class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Sicherung wiederherstellen</button>
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Aus Datei wiederherstellen</button>
+    </div>
+    <input type="file" id="importFile" style="display:none" onchange="importData(this)">
+    <p class="note">Tipp: Wo die Datei landet, legt dein Browser fest. In Chrome unter <b>Einstellungen → Downloads → „Vor dem Herunterladen nach Speicherort fragen“</b> (Samsung Internet: <b>Einstellungen → Downloads</b>) kannst du dir bei jedem Download den Ordner aussuchen.</p>
+
+    <h3>Als Text (ohne Dateisuche)</h3>
+    <p class="note">Alternative: Die Sicherung als Text kopieren und z.&nbsp;B. in einer Notiz oder E-Mail aufbewahren. Zum Wiederherstellen den Text unten einfügen.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-secondary" onclick="copyBackupText()">Sicherung als Text kopieren</button>
+      <button type="button" class="btn btn-secondary" onclick="toggleBackupText()">Text anzeigen / einfügen</button>
+    </div>
+    <div id="backupTextArea" style="display:none">
+      <textarea id="backupText" rows="6" style="width:100%;box-sizing:border-box;margin-top:8px;font-size:.8rem;font-family:monospace;border:1px solid #d5d9e0;border-radius:6px;padding:8px" placeholder="Hier den Sicherungstext einfügen …"></textarea>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" onclick="importFromText()">Aus Text wiederherstellen</button>
+      </div>
+    </div>
+
+    <h3>Zurücksetzen</h3>
+    <div class="actions">
       <button type="button" class="btn btn-danger" onclick="resetData()">Alles zurücksetzen</button>
     </div>
-    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
     <p class="note" id="backupInfo"></p>
   </div>
 </div>
@@ -778,8 +799,28 @@ function backupFileName() {
   const n = new Date();
   return `Arbeitszeit-${Y}-Sicherung-${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}.json`;
 }
+function backupText() {
+  return JSON.stringify({ app: 'arbeitszeit', year: Y, exported: new Date().toISOString(), data: st }, null, 2);
+}
 function backupBlob() {
-  return new Blob([JSON.stringify({ app: 'arbeitszeit', year: Y, exported: new Date().toISOString(), data: st }, null, 2)], { type: 'application/json' });
+  return new Blob([backupText()], { type: 'application/json' });
+}
+
+/* Zeitpunkt der letzten Sicherung merken und anzeigen */
+const LAST_BACKUP_KEY = `${KEY}_lastBackup`;
+function noteBackupDone(how) {
+  try { localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString()); } catch (e) {}
+  $('backupInfo').textContent = how;
+  showLastBackup();
+}
+function showLastBackup() {
+  const raw = localStorage.getItem(LAST_BACKUP_KEY);
+  const el = $('lastBackupInfo');
+  if (!raw) { el.innerHTML = '<b>Noch keine Sicherung erstellt.</b>'; return; }
+  const d = new Date(raw);
+  const daysAgo = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const when = `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  el.innerHTML = `Letzte Sicherung: <b>${when}</b>` + (daysAgo >= 30 ? ` <span class="neg">(vor ${daysAgo} Tagen – bitte erneuern)</span>` : '');
 }
 
 function exportData() {
@@ -788,16 +829,52 @@ function exportData() {
   a.href = url; a.download = backupFileName();
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-  $('backupInfo').textContent = `Sicherung erstellt: ${backupFileName()}`;
+  noteBackupDone(`Sicherung erstellt: ${backupFileName()} (meist im Ordner „Downloads“)`);
 }
 
 async function shareData() {
   try {
     const file = new File([backupBlob()], backupFileName(), { type: 'application/json' });
     await navigator.share({ files: [file], title: `Arbeitszeit ${Y} Sicherung` });
+    noteBackupDone('Sicherung geteilt.');
   } catch (e) {
     if (e && e.name !== 'AbortError') exportData();
   }
+}
+
+async function copyBackupText() {
+  const txt = backupText();
+  $('backupText').value = txt;
+  let ok = false;
+  try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {}
+  if (!ok) {
+    $('backupTextArea').style.display = '';
+    const ta = $('backupText'); ta.focus(); ta.select();
+    try { ok = document.execCommand('copy'); } catch (e) {}
+  }
+  noteBackupDone(ok ? 'Sicherungstext in die Zwischenablage kopiert. Jetzt z. B. in einer Notiz einfügen.' : 'Automatisches Kopieren nicht möglich – bitte den Text unten markieren und kopieren.');
+}
+
+function toggleBackupText() {
+  const box = $('backupTextArea');
+  const show = box.style.display === 'none';
+  box.style.display = show ? '' : 'none';
+  if (show && !$('backupText').value) $('backupText').value = backupText();
+}
+
+/* Gemeinsame Prüfung für Datei- und Text-Wiederherstellung */
+function restoreFromString(text, sourceLabel) {
+  const parsed = safeParse(text);
+  const data = parsed && parsed.app === 'arbeitszeit' && parsed.data ? parsed.data : parsed;
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !('days' in data || 'monthlyAnnual' in data || 'vac' in data)) {
+    alert(`${sourceLabel} ist keine gültige Sicherung der Arbeitszeiterfassung.`);
+    return;
+  }
+  if (parsed.year && parsed.year !== Y && !confirm(`Die Sicherung stammt aus dem Jahr ${parsed.year}, diese App ist für ${Y}. Trotzdem laden?`)) return;
+  if (!confirm('Alle aktuellen Daten werden durch die Sicherung ersetzt. Fortfahren?')) return;
+  st = sanitizeState(data);
+  save();
+  location.reload();
 }
 
 function importData(input) {
@@ -805,20 +882,14 @@ function importData(input) {
   input.value = '';
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
-    const parsed = safeParse(reader.result);
-    const data = parsed && parsed.app === 'arbeitszeit' && parsed.data ? parsed.data : parsed;
-    if (!data || typeof data !== 'object' || Array.isArray(data) || !('days' in data || 'monthlyAnnual' in data || 'vac' in data)) {
-      alert('Diese Datei ist keine gültige Sicherung der Arbeitszeiterfassung.');
-      return;
-    }
-    if (parsed.year && parsed.year !== Y && !confirm(`Die Sicherung stammt aus dem Jahr ${parsed.year}, diese App ist für ${Y}. Trotzdem laden?`)) return;
-    if (!confirm('Alle aktuellen Daten werden durch die Sicherung ersetzt. Fortfahren?')) return;
-    st = sanitizeState(data);
-    save();
-    location.reload();
-  };
+  reader.onload = () => restoreFromString(reader.result, 'Diese Datei');
   reader.readAsText(file);
+}
+
+function importFromText() {
+  const txt = $('backupText').value.trim();
+  if (!txt) { alert('Bitte zuerst den Sicherungstext in das Feld einfügen.'); return; }
+  restoreFromString(txt, 'Der eingefügte Text');
 }
 
 function resetData() {
@@ -826,6 +897,7 @@ function resetData() {
   if (!confirm('Letzte Warnung: Ohne Sicherungsdatei sind die Daten danach unwiederbringlich weg. Fortfahren?')) return;
   localStorage.removeItem(KEY);
   localStorage.removeItem(LEGACY_KEY);
+  localStorage.removeItem(LAST_BACKUP_KEY);
   location.reload();
 }
 
@@ -841,6 +913,7 @@ if (navigator.share && navigator.canShare && typeof File === 'function') {
   } catch (e) {}
 }
 fillMasterInputs();
+showLastBackup();
 renderMonthlyAnnualTable();
 summary0();
 renderPattern();
