@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arbeitszeit 2027</title>
+<meta name="theme-color" content="#2563eb">
+<title>Arbeitszeit</title>
 <style>
 body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;padding:12px;background:#f4f6f9;color:#333}
 .tabs{display:flex;background:#e2e8f0;border-radius:8px;padding:4px;margin-bottom:12px;overflow-x:auto}
@@ -12,6 +13,7 @@ body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;paddi
 .pg{display:none}.pg.active{display:block}
 .card{background:#fff;padding:14px;border-radius:10px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
 h2{font-size:1.05rem;margin:0 0 8px}
+h3{font-size:.95rem;margin:16px 0 6px}
 label{display:block;margin-top:10px;font-size:.85rem;color:#555}
 input,select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #d5d9e0;border-radius:6px;font-size:.95rem;background:#fff;margin-top:2px}
 input:disabled,select:disabled{background:#f8fafc;color:#64748b;cursor:not-allowed}
@@ -26,6 +28,8 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 .btn{width:100%;padding:10px;border:0;border-radius:6px;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:12px}
 .btn-primary{background:#2563eb;color:#fff}
 .btn-success{background:#16a34a;color:#fff}
+.btn-secondary{background:#e2e8f0;color:#1e293b}
+.btn-danger{background:#fee2e2;color:#b91c1c}
 .info-txt{font-size:0.75rem;color:#64748b;display:block;margin-top:2px;}
 .grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
 .mini-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;}
@@ -35,6 +39,11 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 .top-action-bar{display:flex;justify-content:flex-end;margin-bottom:8px;}
 .btn-sm{width:auto;padding:6px 14px;font-size:.85rem;margin-top:0;}
 .month-header-row td{background:#e2e8f0;font-weight:700;color:#1e293b;padding:8px 4px;}
+.month-header-row td span{float:right;font-weight:600;color:#475569}
+.holiday{font-size:0.75rem;color:#dc2626}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .btn{flex:1;min-width:140px}
+.pos{color:#15803d}.neg{color:#b91c1c}
 </style>
 </head>
 <body>
@@ -51,12 +60,12 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <div class="top-action-bar">
       <button type="button" id="mainBtn0" class="btn btn-primary btn-sm" onclick="toggleEdit0()">Ändern</button>
     </div>
-    <h2>Stammdaten & Monatliche vertragliche Arbeitszeit 2027</h2>
+    <h2>Stammdaten &amp; Monatliche vertragliche Arbeitszeit <span class="yr"></span></h2>
     <p class="note">Erfasse hier den zustehenden Urlaubsanspruch, den Übertrag aus dem Vorjahr, Sondervereinbarungen sowie die monatliche vertragliche Arbeitszeit-Basis.</p>
-    
+
     <label for="vac">Urlaubsanspruch (Tage)</label>
     <input id="vac" type="text" inputmode="decimal" disabled>
-    
+
     <label for="ct" style="margin-top:12px; font-weight:600;">Übertrag aus dem Vorjahr:</label>
     <select id="ct" disabled style="margin-top:2px;">
       <option value="plus">Plusstunden (Abzug)</option>
@@ -64,13 +73,15 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     </select>
     <input id="cv" type="text" placeholder="00:00:00" disabled style="margin-top:4px;">
 
-    <label for="agreedOt" style="margin-top:12px; font-weight:600;">vereinbarte Überstunden 2027 (positiver Wert):</label>
+    <label for="agreedOt" style="margin-top:12px; font-weight:600;">vereinbarte Überstunden <span class="yr"></span> (positiver Wert):</label>
     <input id="agreedOt" type="text" placeholder="00:00:00" disabled style="margin-top:2px;">
 
-    <label for="unpaidVac" style="margin-top:12px; font-weight:600;">unbezahlter Urlaub in 2027 (negativer Wert):</label>
+    <label for="unpaidVac" style="margin-top:12px; font-weight:600;">unbezahlter Urlaub in <span class="yr"></span> (negativer Wert):</label>
     <input id="unpaidVac" type="text" placeholder="00:00:00" disabled style="margin-top:2px;">
+    <p class="note">Zeiten kannst du als Stunden:Minuten (z.&nbsp;B. 12:30) oder als Dezimalzahl (z.&nbsp;B. 12,5) eingeben – beim Speichern wird automatisch umgerechnet.</p>
 
-    <h3 style="font-size:0.95rem; margin-top:16px;">Monatliche vertragliche Arbeitszeit & Orientierungswerte</h3>
+    <h3>Monatliche vertragliche Arbeitszeit &amp; Orientierungswerte</h3>
+    <p class="note">Ein leeres Feld übernimmt den Wert des Vormonats.</p>
     <table>
       <thead><tr><th>Monat</th><th>Vertragliche Jahres-Basis (Std) / Orientierung</th></tr></thead>
       <tbody id="monthlyAnnualBody"></tbody>
@@ -78,11 +89,24 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 
     <div class="box" id="sm0"></div>
   </div>
+
+  <div class="card">
+    <h2>Datensicherung</h2>
+    <p class="note">Deine Daten liegen nur in diesem Browser auf diesem Gerät. Lade regelmäßig eine Sicherungsdatei herunter, damit nichts verloren geht (z.&nbsp;B. bei Gerätewechsel oder wenn Browserdaten gelöscht werden).</p>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" onclick="exportData()">Sicherung herunterladen</button>
+      <button type="button" class="btn btn-primary" id="shareBtn" onclick="shareData()" style="display:none">Sicherung teilen</button>
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Sicherung wiederherstellen</button>
+      <button type="button" class="btn btn-danger" onclick="resetData()">Alles zurücksetzen</button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
+    <p class="note" id="backupInfo"></p>
+  </div>
 </div>
 
 <div class="pg" id="pg1">
   <div class="card">
-    <h2>Urlaubsübersicht & Abgleich</h2>
+    <h2>Urlaubsübersicht &amp; Abgleich</h2>
     <p class="note">Übersicht über den zustehenden Urlaub, genommene Tage und Stunden sowie den Saldo.</p>
     <div class="grid-cards" id="vacCards"></div>
     <table>
@@ -99,7 +123,7 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
       <button type="button" id="mainBtn2" class="btn btn-primary btn-sm" onclick="toggleEdit2()">Ändern</button>
     </div>
     <h2>Musterwoche (Montag bis Freitag)</h2>
-    <p class="note">Ende ist fix um 19:00 Uhr. Änderungen wirken sich automatisch und sicher nur auf zukünftige, noch nicht manuell erfasste Tage aus.</p>
+    <p class="note">Ende ist fix um 19:00 Uhr. Die Musterwoche gilt für alle Tage, die du in der Dateneingabe nicht manuell geändert hast. Urlaub und Feiertage trägst du in der Dateneingabe ein.</p>
     <table>
       <thead><tr><th>Wochentag</th><th>Start / Status</th><th>Pause</th><th class="r">Netto (Richtwert)</th></tr></thead>
       <tbody id="patternBody"></tbody>
@@ -114,9 +138,9 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <div class="top-action-bar">
       <button type="button" id="mainBtn3" class="btn btn-primary btn-sm" onclick="toggleEdit3()">Ändern</button>
     </div>
-    <h2>Dateneingabe 2027</h2>
-    <p class="note" style="margin-bottom:10px;">Hessische Feiertage und der automatische Urlaub sind vorbelegt. Erfassung erfolgt über Start und Pause für das gesamte Jahr.</p>
-    
+    <h2>Dateneingabe <span class="yr"></span></h2>
+    <p class="note" style="margin-bottom:10px;">Hessische Feiertage und der automatische Urlaub sind vorbelegt. Erfassung erfolgt über Start und Pause für das gesamte Jahr. Grün hinterlegte Tage liegen in der Zukunft.</p>
+
     <div class="month-summary-box" id="monthSummaryBox"></div>
 
     <table>
@@ -131,8 +155,8 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <div class="top-action-bar">
       <button type="button" id="mainBtn4" class="btn btn-primary btn-sm" onclick="toggleEdit4()">Ändern</button>
     </div>
-    <h2>Auswertung & Jahresbilanz</h2>
-    <p class="note">Hier siehst du die aus deiner Dateneingabe ermittelten Monatswerte und kannst daneben die Werte gemäß Stundenabrechnung 057 eintragen.</p>
+    <h2>Auswertung &amp; Jahresbilanz</h2>
+    <p class="note">Hier siehst du die aus deiner Dateneingabe ermittelten Monatswerte und kannst daneben die Werte gemäß Stundenabrechnung 057 eintragen. Leere Felder übernehmen den Plan-Wert.</p>
     <table>
       <thead><tr><th>Monat</th><th class="r">Plan (Dateneingabe)</th><th class="r">Gemäß Stundenabrechnung 057</th></tr></thead>
       <tbody id="outBody"></tbody>
@@ -144,116 +168,125 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 <script>
 'use strict';
 
-const Y = 2027;
-const KEY = 'arbeitszeit_hessen_persistence_v1';
+/* ========================================================================= */
+/* 0. GRUNDEINSTELLUNGEN                                                     */
+/* ========================================================================= */
+
+const Y = 2027;                                  // Das Jahr, für das die Erfassung gilt
+const KEY = `arbeitszeit_hessen_${Y}_v2`;        // Speicherort im Browser
+const LEGACY_KEY = 'arbeitszeit_hessen_persistence_v1'; // alter Speicherort (nur 2027)
+const DEFAULT_ANNUAL = '2028';                   // vertragliche Jahresstunden (Standard)
 const MN = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const WD = ["So","Mo","Di","Mi","Do","Fr","Sa"];
 const FIXED_END_SEC = 19 * 3600;
+const DEFAULT_PATTERN = { s: '11:00', p: '30' };
 
-const holidays2027 = {
-  '2027-01-01': 'Neujahr',
-  '2027-03-26': 'Karfreitag',
-  '2027-03-29': 'Ostermontag',
-  '2027-05-01': 'Tag der Arbeit',
-  '2027-05-06': 'Christi Himmelfahrt',
-  '2027-05-17': 'Pfingstmontag',
-  '2027-05-27': 'Fronleichnam',
-  '2027-10-03': 'Tag der Deutschen Einheit',
-  '2027-12-25': '1. Weihnachtstag',
-  '2027-12-26': '2. Weihnachtstag'
-};
+/* Hessische Feiertage werden aus dem Jahr berechnet (Ostern nach Gauß). */
+function easterSunday(year) {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+function dateKey(dt) { return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`; }
+function addDays(dt, n) { const r = new Date(dt); r.setDate(r.getDate() + n); return r; }
+function holidaysForYear(year) {
+  const easter = easterSunday(year);
+  const h = {};
+  h[`${year}-01-01`] = 'Neujahr';
+  h[dateKey(addDays(easter, -2))] = 'Karfreitag';
+  h[dateKey(addDays(easter, 1))] = 'Ostermontag';
+  h[`${year}-05-01`] = 'Tag der Arbeit';
+  h[dateKey(addDays(easter, 39))] = 'Christi Himmelfahrt';
+  h[dateKey(addDays(easter, 50))] = 'Pfingstmontag';
+  h[dateKey(addDays(easter, 60))] = 'Fronleichnam';
+  h[`${year}-10-03`] = 'Tag der Deutschen Einheit';
+  h[`${year}-12-25`] = '1. Weihnachtstag';
+  h[`${year}-12-26`] = '2. Weihnachtstag';
+  return h;
+}
 
-const defaultVacations = [
+/* Automatisch vorbelegter Urlaub (gilt nur, solange der Tag nicht manuell geändert wurde). */
+const defaultVacations = new Set([
   '2027-03-15','2027-03-16','2027-03-17','2027-03-18','2027-03-19',
-  '2027-03-22','2027-03-23','2027-03-24','2027-03-25','2027-03-26',
+  '2027-03-22','2027-03-23','2027-03-24','2027-03-25',
   '2027-06-14','2027-06-15','2027-06-16','2027-06-17','2027-06-18',
   '2027-06-21','2027-06-22','2027-06-23','2027-06-24','2027-06-25',
   '2027-10-11','2027-10-12','2027-10-13','2027-10-14','2027-10-15',
   '2027-10-18','2027-10-19','2027-10-20','2027-10-21','2027-10-22'
-];
+]);
 
 /* ========================================================================= */
 /* 1. HILFSFUNKTIONEN                                                        */
 /* ========================================================================= */
 
-const pad = n => String(n).padStart(2, '0');
+function pad(n) { return String(n).padStart(2, '0'); }
 const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const $ = id => document.getElementById(id);
 
 function num(v) {
   const parsed = Number.parseFloat(String(v ?? '').trim().replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-const fmtT = totalSec => {
-  if (isNaN(totalSec) || totalSec === null || totalSec === undefined) return '00:00:00';
+/* Sekunden -> "HH:MM:SS" (mit Vorzeichen) */
+function fmtT(totalSec) {
+  if (!Number.isFinite(totalSec)) return '00:00:00';
   const sign = totalSec < 0 ? '-' : '';
   const a = Math.abs(Math.round(totalSec));
   const h = Math.floor(a / 3600);
   const m = Math.floor((a % 3600) / 60);
   const s = a % 60;
-  return `${sign}${h}:${pad(m)}:${pad(s)}`;
-};
-
-function formatHMSInput(val) {
-  if (!val) return '00:00:00';
-  const clean = String(val).trim();
-  const isNeg = clean.startsWith('-');
-  const cleanPos = clean.replace('-', '');
-  const parts = cleanPos.split(':');
-  let formatted = '';
-  if (parts.length === 1) {
-    formatted = `${pad(parts[0])}:00:00`;
-  } else if (parts.length === 2) {
-    formatted = `${pad(parts[0])}:${pad(parts[1])}:00`;
-  } else if (parts.length >= 3) {
-    formatted = `${pad(parts[0])}:${pad(parts[1])}:${pad(parts[2])}`;
-  } else {
-    formatted = '00:00:00';
-  }
-  return isNeg ? '-' + formatted : formatted;
+  return `${sign}${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-const toSec = s => { 
-  if (!s) return 0; 
+/* Eingabe ("7:30", "7:30:15", "7,5", "-1:15") -> Sekunden */
+function toSec(s) {
+  if (s === null || s === undefined || s === '') return 0;
   if (typeof s === 'number') return Math.round(s);
   const cleanStr = String(s).trim();
   const isNeg = cleanStr.startsWith('-');
-  const parts = cleanStr.replace('-', '').split(':'); 
-  let sec = 0;
-  if (parts.length === 3) { 
-    sec = (+parts[0] * 3600) + (+parts[1] * 60) + +parts[2]; 
-  } else if (parts.length === 2) { 
-    sec = (+parts[0] * 3600) + (+parts[1] * 60); 
+  const parts = cleanStr.replace(/^[-+]/, '').split(':');
+  let sec;
+  if (parts.length >= 2) {
+    sec = num(parts[0]) * 3600 + num(parts[1]) * 60 + (parts.length >= 3 ? num(parts[2]) : 0);
   } else {
-    sec = Math.round(num(cleanStr) * 3600);
-    return sec;
+    sec = num(parts[0]) * 3600;
   }
+  sec = Math.round(sec);
   return isNeg ? -sec : sec;
-};
+}
 
-function getMonthAnnualSec(monthIdx) {
-  let val = 2028;
+/* Beliebige Zeiteingabe in das einheitliche Format "HH:MM:SS" bringen */
+const normHMS = v => fmtT(toSec(v));
+
+const isStatus = s => s === 'U' || s === 'F' || s === 'X';
+const statusLabel = s => s === 'U' ? 'Urlaub' : s === 'F' ? 'Feiertag' : s === 'X' ? 'Frei' : esc(s);
+
+/* Wirksame Jahres-Basis eines Monats (leere Felder erben vom Vormonat) */
+function getMonthAnnualHours(monthIdx) {
+  let val = num(DEFAULT_ANNUAL);
   for (let i = 0; i <= monthIdx; i++) {
     if (st.monthlyAnnual[i] !== undefined && st.monthlyAnnual[i] !== '') {
       val = num(st.monthlyAnnual[i]);
     }
   }
-  return Math.round(val * 3600);
+  return val;
+}
+const getMonthAnnualSec = monthIdx => Math.round(getMonthAnnualHours(monthIdx) * 3600);
+
+function annualSecSum() {
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += getMonthAnnualSec(i) / 12;
+  return Math.round(sum);
 }
 
-const annualSecSum = () => {
-  let sum = 0;
-  for (let i = 0; i < 12; i++) {
-    sum += getMonthAnnualSec(i) / 12;
-  }
-  return Math.round(sum);
-};
-
 function dayTargetSecForMonth(monthIdx) {
-  const annualHours = getMonthAnnualSec(monthIdx) / 3600;
-  const weeklyHours = annualHours / 52;
-  const dailyHours = weeklyHours / 5;
-  return Math.round(dailyHours * 3600);
+  return Math.round(getMonthAnnualSec(monthIdx) / 52 / 5);
 }
 
 function calcNetSec(s, p, monthIdx) {
@@ -267,9 +300,9 @@ function calcNetSec(s, p, monthIdx) {
 
 function getDayData(d) {
   if (st.days[d.k]) return st.days[d.k];
-  if (holidays2027[d.k]) return { s: 'F', p: '0' };
-  if (defaultVacations.includes(d.k)) return { s: 'U', p: '0' };
-  const p = st.pattern[d.w] || { s: '11:00', p: '30' };
+  if (holidays[d.k]) return { s: 'F', p: '0' };
+  if (defaultVacations.has(d.k)) return { s: 'U', p: '0' };
+  const p = st.pattern[d.w] || DEFAULT_PATTERN;
   return { s: p.s, p: p.p };
 }
 
@@ -277,116 +310,162 @@ function getDayData(d) {
 /* 2. DATEN INITIALISIEREN                                                   */
 /* ========================================================================= */
 
+const holidays = holidaysForYear(Y);
+
 const days = [];
 for (let d = new Date(Y, 0, 1); d.getFullYear() === Y; d.setDate(d.getDate() + 1)) {
   const w = d.getDay();
   if (w !== 0 && w !== 6) {
-    days.push({ 
-      k: `${Y}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, 
-      m: d.getMonth(), 
-      w: w, 
-      dd: pad(d.getDate()), 
-      dateObj: new Date(d) 
-    });
+    days.push({ k: dateKey(d), m: d.getMonth(), w, dd: pad(d.getDate()), dateObj: new Date(d) });
   }
 }
 
-let st = {
-  vac: '30', 
-  ct: 'plus', 
-  cv: '00:00:00',
-  monthlyAnnual: new Array(12).fill('2028'),
-  pattern: null,
-  days: {},
-  monthlyActual: {},
-  agreedOt: '00:00:00',
-  unpaidVac: '00:00:00'
-};
-
-try {
-  let loaded = JSON.parse(localStorage.getItem(KEY) || 'null');
-  if (!loaded) {
-    for (let i = 1; i <= 20; i++) {
-      let oldData = localStorage.getItem(`arbeitszeit_hessen_v${i}_fix_eval`);
-      if (!oldData) oldData = localStorage.getItem(`arbeitszeit_hessen_v${i}`);
-      if (oldData) { loaded = JSON.parse(oldData); break; }
-    }
-  }
-  if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
-    Object.assign(st, loaded);
-    if (loaded.annual !== undefined && (!Array.isArray(loaded.monthlyAnnual) || loaded.monthlyAnnual.length === 0)) {
-      st.monthlyAnnual = new Array(12).fill(String(loaded.annual));
-    }
-  }
-} catch (e) {}
-
-if (!Array.isArray(st.monthlyAnnual)) st.monthlyAnnual = new Array(12).fill('2028');
-st.monthlyAnnual = Array.from({ length: 12 }, (_, i) => st.monthlyAnnual[i] == null ? '' : String(st.monthlyAnnual[i]));
-if (!st.days || typeof st.days !== 'object' || Array.isArray(st.days)) st.days = {};
-if (!st.monthlyActual || typeof st.monthlyActual !== 'object' || Array.isArray(st.monthlyActual)) st.monthlyActual = {};
-if (!st.pattern || typeof st.pattern !== 'object' || Array.isArray(st.pattern)) st.pattern = null;
-st.vac = st.vac == null ? '30' : String(st.vac);
-st.ct = st.ct === 'minus' ? 'minus' : 'plus';
-st.cv = st.cv == null ? '00:00:00' : String(st.cv);
-st.agreedOt = st.agreedOt == null ? '00:00:00' : String(st.agreedOt);
-st.unpaidVac = st.unpaidVac == null ? '00:00:00' : String(st.unpaidVac);
-
-if (!st.pattern) {
-  const initialAnnualSec = getMonthAnnualSec(0);
-  const initialWeeklySec = initialAnnualSec / 52;
-  const targetDailyNetSec = initialWeeklySec / 5;
-  const defaultPauseMin = 30;
-  const startSec = FIXED_END_SEC - targetDailyNetSec - (defaultPauseMin * 60);
-  const constrainedStartSec = Math.max(startSec, 11 * 3600);
-  const startHour = Math.floor(constrainedStartSec / 3600);
-  const startMin = Math.floor((constrainedStartSec % 3600) / 60);
-  const roundedMin = Math.round(startMin / 15) * 15;
-  const startTimeStr = `${pad(startHour)}:${pad(roundedMin >= 60 ? 0 : roundedMin)}`;
-  st.pattern = {
-    1: { s: startTimeStr, p: String(defaultPauseMin) },
-    2: { s: startTimeStr, p: String(defaultPauseMin) },
-    3: { s: startTimeStr, p: String(defaultPauseMin) },
-    4: { s: startTimeStr, p: String(defaultPauseMin) },
-    5: { s: startTimeStr, p: String(defaultPauseMin) }
+function defaultState() {
+  return {
+    vac: '30',
+    ct: 'plus',
+    cv: '00:00:00',
+    monthlyAnnual: new Array(12).fill(DEFAULT_ANNUAL),
+    pattern: null,
+    days: {},
+    monthlyActual: {},
+    agreedOt: '00:00:00',
+    unpaidVac: '00:00:00'
   };
 }
 
-function save() { 
-  try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} 
+function safeParse(raw) {
+  try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
-/* ========================================================================= */
-/* 3. LOGIK UND ANZEIGE                                                      */
-/* ========================================================================= */
-
-function daySec(d) {
-  const dat = getDayData(d);
-  return calcNetSec(dat.s, dat.p, d.m);
-}
-
-function monthPlanNetTotals() {
-  const t = new Array(12).fill(0);
-  days.forEach(d => {
-    const dat = getDayData(d);
-    if (dat.s !== 'U') {
-      t[d.m] += calcNetSec(dat.s, dat.p, d.m);
-    }
-  });
-  return t;
-}
-
-function monthActualNetTotals() {
-  const planNet = monthPlanNetTotals();
-  const t = new Array(12).fill(0);
-  for (let i = 0; i < 12; i++) {
-    if (st.monthlyActual[i] !== undefined && st.monthlyActual[i] !== '') {
-      t[i] = toSec(st.monthlyActual[i]);
-    } else {
-      t[i] = planNet[i];
+function loadStoredState() {
+  let loaded = safeParse(localStorage.getItem(KEY));
+  if (!loaded && Y === 2027) {
+    loaded = safeParse(localStorage.getItem(LEGACY_KEY));
+    for (let i = 1; i <= 20 && !loaded; i++) {
+      loaded = safeParse(localStorage.getItem(`arbeitszeit_hessen_v${i}_fix_eval`))
+            || safeParse(localStorage.getItem(`arbeitszeit_hessen_v${i}`));
     }
   }
-  return t;
+  return loaded;
 }
+
+/* Geladene Daten prüfen und in eine saubere Form bringen */
+function sanitizeState(loaded) {
+  const s = defaultState();
+  if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
+    Object.assign(s, loaded);
+    if (loaded.annual !== undefined && (!Array.isArray(loaded.monthlyAnnual) || loaded.monthlyAnnual.length === 0)) {
+      s.monthlyAnnual = new Array(12).fill(String(loaded.annual));
+    }
+  }
+  if (!Array.isArray(s.monthlyAnnual)) s.monthlyAnnual = new Array(12).fill(DEFAULT_ANNUAL);
+  s.monthlyAnnual = Array.from({ length: 12 }, (_, i) => s.monthlyAnnual[i] == null ? '' : String(s.monthlyAnnual[i]));
+  if (!s.days || typeof s.days !== 'object' || Array.isArray(s.days)) s.days = {};
+  if (!s.monthlyActual || typeof s.monthlyActual !== 'object' || Array.isArray(s.monthlyActual)) s.monthlyActual = {};
+  if (!s.pattern || typeof s.pattern !== 'object' || Array.isArray(s.pattern)) s.pattern = null;
+  s.vac = s.vac == null ? '30' : String(s.vac);
+  s.ct = s.ct === 'minus' ? 'minus' : 'plus';
+  s.cv = normHMS(s.cv == null ? '00:00:00' : s.cv);
+  s.agreedOt = normHMS(s.agreedOt == null ? '00:00:00' : s.agreedOt);
+  s.unpaidVac = normHMS(s.unpaidVac == null ? '00:00:00' : s.unpaidVac);
+
+  /* Nur gültige Tageseinträge behalten */
+  for (const k of Object.keys(s.days)) {
+    const v = s.days[k];
+    if (!v || typeof v !== 'object' || typeof v.s !== 'string') { delete s.days[k]; continue; }
+    v.p = String(v.p ?? '0');
+  }
+
+  if (s.pattern) {
+    /* In der Musterwoche sind Urlaub/Feiertag nicht sinnvoll -> als "Frei" behandeln */
+    for (let i = 1; i <= 5; i++) {
+      const p = s.pattern[i];
+      if (!p || typeof p !== 'object' || typeof p.s !== 'string') { s.pattern[i] = { ...DEFAULT_PATTERN }; continue; }
+      if (p.s === 'U' || p.s === 'F') p.s = 'X';
+      p.p = String(p.p ?? '30');
+    }
+  } else {
+    /* Startzeit so wählen, dass mit 30 Min Pause der Regel-Tag erreicht wird (frühestens 11:00) */
+    const targetDailyNetSec = getMonthAnnualSecFor(s, 0) / 52 / 5;
+    const startSec = Math.max(FIXED_END_SEC - targetDailyNetSec - 30 * 60, 11 * 3600);
+    const startHour = Math.floor(startSec / 3600);
+    const roundedMin = Math.round(((startSec % 3600) / 60) / 15) * 15;
+    const startTimeStr = `${pad(startHour)}:${pad(roundedMin >= 60 ? 0 : roundedMin)}`;
+    s.pattern = {};
+    for (let i = 1; i <= 5; i++) s.pattern[i] = { s: startTimeStr, p: '30' };
+  }
+  return s;
+}
+function getMonthAnnualSecFor(s, monthIdx) {
+  let val = num(DEFAULT_ANNUAL);
+  for (let i = 0; i <= monthIdx; i++) {
+    if (s.monthlyAnnual[i] !== undefined && s.monthlyAnnual[i] !== '') val = num(s.monthlyAnnual[i]);
+  }
+  return Math.round(val * 3600);
+}
+
+let st = sanitizeState(loadStoredState());
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(st));
+  } catch (e) {
+    alert('Speichern im Browser fehlgeschlagen. Bitte lade eine Sicherung herunter, damit nichts verloren geht.');
+  }
+}
+
+/* ========================================================================= */
+/* 3. ZENTRALE BERECHNUNG                                                    */
+/* ========================================================================= */
+
+/* Alle Kennzahlen an einer Stelle – alle Reiter greifen hierauf zu. */
+function computeStats() {
+  const planNet = new Array(12).fill(0);      // Plan-Netto je Monat (ohne Urlaub)
+  const vacDays = new Array(12).fill(0);      // genommene Urlaubstage je Monat
+  const vacSec = new Array(12).fill(0);       // genommene Urlaubsstunden je Monat
+  let totalClaimSec = 0;
+
+  days.forEach(d => {
+    const target = dayTargetSecForMonth(d.m);
+    totalClaimSec += target;
+    const dat = getDayData(d);
+    if (dat.s === 'U') {
+      vacDays[d.m]++;
+      vacSec[d.m] += target;
+    } else {
+      planNet[d.m] += calcNetSec(dat.s, dat.p, d.m);
+    }
+  });
+
+  const actualNet = planNet.map((p, i) =>
+    (st.monthlyActual[i] !== undefined && st.monthlyActual[i] !== '') ? toSec(st.monthlyActual[i]) : p);
+
+  const contractSec = annualSecSum();
+  const avgDaySec = totalClaimSec / days.length;
+  const totalClaimDays = Math.max(0, num(st.vac));
+  const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
+  const takenDays = vacDays.reduce((a, b) => a + b, 0);
+  const takenSec = vacSec.reduce((a, b) => a + b, 0);
+  const carrySec = toSec(st.cv);
+  const agreedOtSec = Math.abs(toSec(st.agreedOt));
+  const unpaidVacSec = Math.abs(toSec(st.unpaidVac));
+  const carrySigned = st.ct === 'plus' ? -carrySec : carrySec;
+  const nettoTargetSec = contractSec - totalClaimHoursSec + carrySigned + agreedOtSec - unpaidVacSec;
+  const totalPlanNet = planNet.reduce((a, b) => a + b, 0);
+  const totalActualNet = actualNet.reduce((a, b) => a + b, 0);
+
+  return {
+    planNet, vacDays, vacSec, actualNet,
+    contractSec, totalClaimDays, totalClaimHoursSec, takenDays, takenSec,
+    remainingDays: totalClaimDays - takenDays, remainingSec: totalClaimHoursSec - takenSec,
+    carrySec, agreedOtSec, unpaidVacSec, nettoTargetSec, totalPlanNet, totalActualNet
+  };
+}
+
+/* ========================================================================= */
+/* 4. ANZEIGE                                                                */
+/* ========================================================================= */
 
 function showTab(i) {
   document.querySelectorAll('.tab').forEach((t, j) => t.classList.toggle('active', i === j));
@@ -398,360 +477,370 @@ function showTab(i) {
   if (i === 4) renderOut();
 }
 
+function setEditButton(btn, editing) {
+  btn.textContent = editing ? 'Speichern' : 'Ändern';
+  btn.className = editing ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
+}
+
+/* --- Reiter 1: Stammdaten --- */
 let editing0 = false;
 function toggleEdit0() {
   editing0 = !editing0;
-  const btn = document.getElementById('mainBtn0');
-  btn.textContent = editing0 ? 'Speichern' : 'Ändern';
-  btn.className = editing0 ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
-  for (let i = 0; i < 12; i++) {
-    document.getElementById(`m_annual_${i}`).disabled = !editing0;
-  }
-  document.getElementById('vac').disabled = !editing0;
-  document.getElementById('ct').disabled = !editing0;
-  document.getElementById('cv').disabled = !editing0;
-  document.getElementById('agreedOt').disabled = !editing0;
-  document.getElementById('unpaidVac').disabled = !editing0;
+  setEditButton($('mainBtn0'), editing0);
+  for (let i = 0; i < 12; i++) $(`m_annual_${i}`).disabled = !editing0;
+  ['vac', 'ct', 'cv', 'agreedOt', 'unpaidVac'].forEach(id => { $(id).disabled = !editing0; });
 
   if (!editing0) {
-    for (let i = 0; i < 12; i++) {
-      st.monthlyAnnual[i] = document.getElementById(`m_annual_${i}`).value;
-    }
-    st.vac = document.getElementById('vac').value;
-    st.ct = document.getElementById('ct').value;
-    st.cv = formatHMSInput(document.getElementById('cv').value);
-    st.agreedOt = formatHMSInput(document.getElementById('agreedOt').value);
-    st.unpaidVac = formatHMSInput(document.getElementById('unpaidVac').value);
-
-    document.getElementById('cv').value = st.cv;
-    document.getElementById('agreedOt').value = st.agreedOt;
-    document.getElementById('unpaidVac').value = st.unpaidVac;
+    for (let i = 0; i < 12; i++) st.monthlyAnnual[i] = $(`m_annual_${i}`).value.trim();
+    st.vac = String(Math.max(0, num($('vac').value)));
+    st.ct = $('ct').value;
+    st.cv = normHMS($('cv').value);
+    st.agreedOt = normHMS($('agreedOt').value);
+    st.unpaidVac = normHMS($('unpaidVac').value);
+    fillMasterInputs();
     save();
     renderMonthlyAnnualTable();
     summary0();
   }
 }
 
-let editing2 = false;
-function toggleEdit2() {
-  editing2 = !editing2;
-  const btn = document.getElementById('mainBtn2');
-  btn.textContent = editing2 ? 'Speichern' : 'Ändern';
-  btn.className = editing2 ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
-  renderPattern();
-  if (!editing2) save();
+function fillMasterInputs() {
+  $('vac').value = st.vac;
+  $('ct').value = st.ct;
+  $('cv').value = st.cv;
+  $('agreedOt').value = st.agreedOt;
+  $('unpaidVac').value = st.unpaidVac;
 }
 
-let editing3 = false;
-function toggleEdit3() {
-  editing3 = !editing3;
-  const btn = document.getElementById('mainBtn3');
-  btn.textContent = editing3 ? 'Speichern' : 'Ändern';
-  btn.className = editing3 ? 'btn btn-success btn-sm' : 'btn primary btn-sm';
-  renderDays();
-  if (!editing3) { save(); summary0(); }
-}
-
-let editing4 = false;
-function toggleEdit4() {
-  editing4 = !editing4;
-  const btn = document.getElementById('mainBtn4');
-  btn.textContent = editing4 ? 'Speichern' : 'Ändern';
-  btn.className = editing4 ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
-  renderOut();
-  if (!editing4) save();
+function monthInfoHtml(annualHours, i) {
+  const monthSec = (annualHours * 3600) / 12;
+  const weekSec = Math.round(annualHours / 52 * 3600);
+  const daySecVal = Math.round(annualHours * 3600 / 52 / 5);
+  return `Regel-Monat: <b>${fmtT(monthSec)}</b> | Regel-Woche: <b>${fmtT(weekSec)}</b> | Regel-Tag: <b>${fmtT(daySecVal)}</b>`;
 }
 
 function renderMonthlyAnnualTable() {
   let html = '';
   MN.forEach((mName, i) => {
-    const val = st.monthlyAnnual[i] !== undefined ? st.monthlyAnnual[i] : '2028';
-    const annualHours = num(val);
-    const monthSec = (annualHours * 3600) / 12;
-    const weeklyHours = annualHours / 52;
-    const weekSec = Math.round(weeklyHours * 3600);
-    const daySecVal = dayTargetSecForMonth(i);
+    const val = st.monthlyAnnual[i] ?? '';
+    const effective = getMonthAnnualHours(i);
     html += `<tr>
       <td>${mName}</td>
       <td>
-        <input type="text" id="m_annual_${i}" value="${esc(val)}" inputmode="decimal" ${editing0 ? '' : 'disabled'} style="text-align:right;" oninput="updateMonthlyInfo(${i})">
-        <span class="info-txt" id="info_${i}">
-          Regel-Monat: <b>${fmtT(monthSec)}</b> | Regel-Woche: <b>${fmtT(weekSec)}</b> | Regel-Tag: <b>${fmtT(daySecVal)}</b>
-        </span>
+        <input type="text" id="m_annual_${i}" value="${esc(val)}" placeholder="${esc(effective)}" inputmode="decimal" ${editing0 ? '' : 'disabled'} style="text-align:right;" oninput="updateMonthlyInfo(${i})">
+        <span class="info-txt" id="info_${i}">${monthInfoHtml(effective, i)}</span>
       </td>
     </tr>`;
   });
-  document.getElementById('monthlyAnnualBody').innerHTML = html;
+  $('monthlyAnnualBody').innerHTML = html;
 }
 
 function updateMonthlyInfo(i) {
-  const inputVal = document.getElementById(`m_annual_${i}`).value;
-  const annualHours = num(inputVal);
-  const monthSec = (annualHours * 3600) / 12;
-  const weeklyHours = annualHours / 52;
-  const weekSec = Math.round(weeklyHours * 3600);
-  const daySecVal = dayTargetSecForMonth(i);
-  document.getElementById(`info_${i}`).innerHTML = 
-    `Regel-Monat: <b>${fmtT(monthSec)}</b> | Regel-Woche: <b>${fmtT(weekSec)}</b> | Regel-Tag: <b>${fmtT(daySecVal)}</b>`;
+  /* Während der Eingabe: Werte für diesen und die folgenden Monate (Vererbung) aktualisieren */
+  let effective = num(DEFAULT_ANNUAL);
+  for (let m = 0; m < 12; m++) {
+    const v = $(`m_annual_${m}`).value.trim();
+    if (v !== '') effective = num(v);
+    if (m >= i) {
+      $(`info_${m}`).innerHTML = monthInfoHtml(effective, m);
+      $(`m_annual_${m}`).placeholder = effective;
+    }
+  }
 }
 
 function summary0() {
-  const contractSec = annualSecSum();
-  const totalClaimDays = Math.max(0, num(st.vac));
-  let totalClaimSec = 0;
-  days.forEach(d => { totalClaimSec += dayTargetSecForMonth(d.m); });
-  const avgDaySec = totalClaimSec / days.length;
-  const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
-  const carrySec = toSec(st.cv);
-  const agreedOtSec = Math.abs(toSec(st.agreedOt));
-  const unpaidVacSec = Math.abs(toSec(st.unpaidVac));
-  const nettoSec = contractSec - totalClaimHoursSec + (st.ct === 'plus' ? -carrySec : carrySec) + agreedOtSec - unpaidVacSec;
-
-  document.getElementById('sm0').innerHTML =
-    `Vertragliche Arbeitszeit: <b>${fmtT(contractSec)}</b><br>` +
-    `− Zustehender Urlaub (${totalClaimDays} Tage): <b>${fmtT(totalClaimHoursSec)}</b><br>` +
-    `${st.ct === 'plus' ? '−' : '+'} Übertrag aus Vorjahr: <b>${fmtT(carrySec)}</b><br>` +
-    `+ vereinbarte Überstunden 2027 (positiver Wert): <b>${fmtT(agreedOtSec)}</b><br>` +
-    `− unbezahlter Urlaub in 2027 (negativer Wert): <b>${fmtT(unpaidVacSec)}</b><br>` +
-    `= <b>Vertraglich zu erfüllende Nettoarbeitszeit (Soll):</b> <b>${fmtT(nettoSec)}</b>`;
+  const x = computeStats();
+  $('sm0').innerHTML =
+    `Vertragliche Arbeitszeit: <b>${fmtT(x.contractSec)}</b><br>` +
+    `− Zustehender Urlaub (${x.totalClaimDays} Tage): <b>${fmtT(x.totalClaimHoursSec)}</b><br>` +
+    `${st.ct === 'plus' ? '−' : '+'} Übertrag aus Vorjahr: <b>${fmtT(x.carrySec)}</b><br>` +
+    `+ vereinbarte Überstunden ${Y}: <b>${fmtT(x.agreedOtSec)}</b><br>` +
+    `− unbezahlter Urlaub in ${Y}: <b>${fmtT(x.unpaidVacSec)}</b><br>` +
+    `= <b>Vertraglich zu erfüllende Nettoarbeitszeit (Soll):</b> <b>${fmtT(x.nettoTargetSec)}</b>`;
 }
 
+/* --- Reiter 2: Urlaub --- */
 function renderVacationTab() {
-  const totalClaimDays = Math.max(0, num(st.vac));
-  let takenDaysCount = 0;
-  let takenSecTotal = 0;
-  let totalClaimSec = 0;
-  days.forEach(d => {
-    totalClaimSec += dayTargetSecForMonth(d.m);
-    if (getDayData(d).s === 'U') {
-      takenDaysCount++;
-      takenSecTotal += dayTargetSecForMonth(d.m);
-    }
-  });
-  const avgDaySec = totalClaimSec / days.length;
-  const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
-  const remainingDays = totalClaimDays - takenDaysCount;
-  const remainingSec = totalClaimHoursSec - takenSecTotal;
-  document.getElementById('vacCards').innerHTML = `
-    <div class="mini-card"><span>Zustehender Urlaub</span><strong>${totalClaimDays} Tage</strong></div>
-    <div class="mini-card"><span>Genommener Urlaub</span><strong>${takenDaysCount} Tage</strong></div>
-    <div class="mini-card"><span>Verbleibender Urlaub</span><strong>${remainingDays} Tage</strong></div>
+  const x = computeStats();
+  $('vacCards').innerHTML = `
+    <div class="mini-card"><span>Zustehender Urlaub</span><strong>${x.totalClaimDays} Tage</strong></div>
+    <div class="mini-card"><span>Genommener Urlaub</span><strong>${x.takenDays} Tage</strong></div>
+    <div class="mini-card"><span>Verbleibender Urlaub</span><strong class="${x.remainingDays < 0 ? 'neg' : ''}">${x.remainingDays} Tage</strong></div>
   `;
   let monthHtml = '';
-  let sumMonthDays = 0;
-  let sumMonthSec = 0;
   MN.forEach((mName, i) => {
-    const mDays = days.filter(d => d.m === i && getDayData(d).s === 'U');
-    let mSec = 0;
-    mDays.forEach(d => mSec += dayTargetSecForMonth(d.m));
-    sumMonthDays += mDays.length;
-    sumMonthSec += mSec;
-    monthHtml += `<tr>
-      <td>${mName}</td>
-      <td class="r">${mDays.length} Tage</td>
-      <td class="r">${fmtT(mSec)}</td>
-    </tr>`;
+    monthHtml += `<tr><td>${mName}</td><td class="r">${x.vacDays[i]} Tage</td><td class="r">${fmtT(x.vacSec[i])}</td></tr>`;
   });
-  monthHtml += `<tr class="sum">
-    <td>Summe</td>
-    <td class="r">${sumMonthDays} Tage</td>
-    <td class="r">${fmtT(sumMonthSec)}</td>
-  </tr>`;
-  document.getElementById('vacMonthBody').innerHTML = monthHtml;
-  document.getElementById('vacSummaryBox').innerHTML =
+  monthHtml += `<tr class="sum"><td>Summe</td><td class="r">${x.takenDays} Tage</td><td class="r">${fmtT(x.takenSec)}</td></tr>`;
+  $('vacMonthBody').innerHTML = monthHtml;
+  $('vacSummaryBox').innerHTML =
     `<b>Urlaubsabgleich Gesamtjahr:</b><br>` +
-    `• Zustehender Urlaub: <b>${totalClaimDays} Tage</b> (${fmtT(totalClaimHoursSec)})<br>` +
-    `• Bereits genommen: <b>${takenDaysCount} Tage</b> (${fmtT(takenSecTotal)})<br>` +
-    `• Resturlaub: <b>${remainingDays} Tage</b> (${fmtT(remainingSec)})`;
+    `• Zustehender Urlaub: <b>${x.totalClaimDays} Tage</b> (${fmtT(x.totalClaimHoursSec)})<br>` +
+    `• Bereits genommen: <b>${x.takenDays} Tage</b> (${fmtT(x.takenSec)})<br>` +
+    `• Resturlaub: <b>${x.remainingDays} Tage</b> (${fmtT(x.remainingSec)})`;
 }
 
-const timeOpts = [['U', 'Urlaub'], ['F', 'Feiertag'], ['X', 'Frei']];
+/* --- Auswahllisten --- */
+const timeList = [];
 for (let m = 5 * 60; m <= 18 * 60; m += 15) {
-  timeOpts.push([`${pad(Math.floor(m / 60))}:${pad(m % 60)}`, `${pad(Math.floor(m / 60))}:${pad(m % 60)}`]);
+  const t = `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+  timeList.push([t, t]);
 }
+const dayOpts = [['U', 'Urlaub'], ['F', 'Feiertag'], ['X', 'Frei'], ...timeList];
+const patternOpts = [['X', 'Frei'], ...timeList];
 const pauseOpts = [0, 15, 30, 45, 60, 75, 90, 120].map(p => [String(p), p + ' Min']);
-const opts = (list, sel) => list.map(o => `<option value="${o[0]}"${o[0] === sel ? ' selected' : ''}>${o[1]}</option>`).join('');
+const opts = (list, sel) => {
+  let html = list.map(o => `<option value="${o[0]}"${o[0] === sel ? ' selected' : ''}>${o[1]}</option>`).join('');
+  if (!list.some(o => o[0] === sel)) html = `<option value="${esc(sel)}" selected>${esc(sel)}</option>` + html;
+  return html;
+};
+
+/* --- Reiter 3: Musterwoche --- */
+let editing2 = false;
+function toggleEdit2() {
+  editing2 = !editing2;
+  setEditButton($('mainBtn2'), editing2);
+  renderPattern();
+  if (!editing2) save();
+}
 
 function renderPattern() {
   const pNames = {1:'Montag', 2:'Dienstag', 3:'Mittwoch', 4:'Donnerstag', 5:'Freitag'};
   let html = '';
   let weekSum = 0;
   for (let i = 1; i <= 5; i++) {
-    const p = st.pattern[i] || { s: '11:00', p: '30' };
+    const p = st.pattern[i] || DEFAULT_PATTERN;
     const net = calcNetSec(p.s, p.p, 0);
     weekSum += net;
     if (editing2) {
       html += `<tr><td>${pNames[i]}</td>
-        <td><select onchange="setPattern(${i},'s',this.value)">${opts(timeOpts, p.s)}</select></td>
-        <td><select onchange="setPattern(${i},'p',this.value)">${opts(pauseOpts, p.p)}</select></td>
+        <td><select onchange="setPattern(${i},'s',this.value)">${opts(patternOpts, p.s)}</select></td>
+        <td><select onchange="setPattern(${i},'p',this.value)" ${isStatus(p.s) ? 'disabled' : ''}>${opts(pauseOpts, p.p)}</select></td>
         <td class="r">${fmtT(net)}</td></tr>`;
     } else {
       html += `<tr><td>${pNames[i]}</td>
-        <td>${p.s === 'U' ? 'Urlaub' : p.s === 'F' ? 'Feiertag' : p.s === 'X' ? 'Frei' : esc(p.s)}</td>
+        <td>${statusLabel(p.s)}</td>
         <td>${esc(p.p)} Min</td>
         <td class="r">${fmtT(net)}</td></tr>`;
     }
   }
-  document.getElementById('patternBody').innerHTML = html;
-  document.getElementById('patternSumBox').innerHTML = `Wochenarbeitszeit gesamt (Richtwert): <b>${fmtT(weekSum)}</b>`;
+  $('patternBody').innerHTML = html;
+  $('patternSumBox').innerHTML = `Wochenarbeitszeit gesamt (Richtwert): <b>${fmtT(weekSum)}</b>`;
 }
 
 function setPattern(dayNum, field, val) {
-  if (!st.pattern[dayNum]) { st.pattern[dayNum] = { s: '11:00', p: '30' }; }
+  if (!st.pattern[dayNum]) st.pattern[dayNum] = { ...DEFAULT_PATTERN };
   st.pattern[dayNum][field] = val;
-  if (field === 's' && (val === 'U' || val === 'F' || val === 'X')) { st.pattern[dayNum].p = '0'; }
+  if (field === 's' && isStatus(val)) st.pattern[dayNum].p = '0';
   save(); renderPattern();
 }
 
-function renderDays() {
-  const today = new Date();
-  let rowsHtml = '';
-  let yearTotalSec = 0;
-  let currentMonth = -1;
+/* --- Reiter 4: Dateneingabe --- */
+let editing3 = false;
+function toggleEdit3() {
+  editing3 = !editing3;
+  setEditButton($('mainBtn3'), editing3);
+  renderDays();
+  if (!editing3) save();
+}
 
+let todayStart = null;
+function dayRowHtml(d) {
+  const dat = getDayData(d);
+  const planSec = calcNetSec(dat.s, dat.p, d.m);
+  const rowClass = d.dateObj >= todayStart ? 'future-row' : '';
+  let dayLabel = `${WD[d.w]} ${d.dd}.${pad(d.m + 1)}.`;
+  if (holidays[d.k]) dayLabel += ` <span class="holiday">(${holidays[d.k]})</span>`;
+
+  if (editing3) {
+    return `<tr id="row_${d.k}" class="${rowClass}"><td>${dayLabel}</td>
+      <td><select onchange="setDay('${d.k}','s',this.value)">${opts(dayOpts, dat.s)}</select></td>
+      <td><select onchange="setDay('${d.k}','p',this.value)" ${isStatus(dat.s) ? 'disabled' : ''}>${opts(pauseOpts, dat.p)}</select></td>
+      <td class="r">${fmtT(planSec)}</td></tr>`;
+  }
+  return `<tr id="row_${d.k}" class="${rowClass}"><td>${dayLabel}</td>
+    <td>${statusLabel(dat.s)}</td>
+    <td>${esc(dat.p)} Min</td>
+    <td class="r">${fmtT(planSec)}</td></tr>`;
+}
+
+function renderDays() {
+  const now = new Date();
+  todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const x = computeStats();
+  let rowsHtml = '';
+  let currentMonth = -1;
   days.forEach(d => {
     if (d.m !== currentMonth) {
       currentMonth = d.m;
-      rowsHtml += `<tr class="month-header-row"><td colspan="4">${MN[currentMonth]} ${Y}</td></tr>`;
+      rowsHtml += `<tr class="month-header-row"><td colspan="4" id="mh_${currentMonth}">${MN[currentMonth]} ${Y}<span>${fmtT(x.planNet[currentMonth])}</span></td></tr>`;
     }
-
-    const dat = getDayData(d);
-    const planSec = calcNetSec(dat.s, dat.p, d.m);
-    let daySecVal = 0;
-    if (dat.s !== 'U') daySecVal = planSec;
-    if (st.days[d.k]) {
-      const customDat = st.days[d.k];
-      daySecVal = calcNetSec(customDat.s, customDat.p, d.m);
-    }
-    if (dat.s === 'U') daySecVal = 0;
-    yearTotalSec += daySecVal;
-
-    const isFuture = d.dateObj >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const rowClass = isFuture ? 'future-row' : '';
-    let dayLabel = `${WD[d.w]} ${d.dd}.${pad(d.m + 1)}.`;
-    if (holidays2027[d.k]) dayLabel += ` <span style="font-size:0.75rem; color:#dc2626;">(${holidays2027[d.k]})</span>`;
-    
-    if (editing3) {
-      rowsHtml += `<tr class="${rowClass}"><td>${dayLabel}</td>
-        <td><select onchange="setDay('${d.k}','s',this.value)">${opts(timeOpts, dat.s)}</select></td>
-        <td><select id="p_${d.k}" onchange="setDay('${d.k}','p',this.value)">${opts(pauseOpts, dat.p)}</select></td>
-        <td class="r">${fmtT(planSec)}</td></tr>`;
-    } else {
-      rowsHtml += `<tr class="${rowClass}"><td>${dayLabel}</td>
-        <td>${dat.s === 'U' ? 'Urlaub' : dat.s === 'F' ? 'Feiertag' : dat.s === 'X' ? 'Frei' : esc(dat.s)}</td>
-        <td>${esc(dat.p)} Min</td>
-        <td class="r">${fmtT(planSec)}</td></tr>`;
-    }
+    rowsHtml += dayRowHtml(d);
   });
+  $('dayBody').innerHTML = rowsHtml;
+  updateDaySummary(x);
+}
 
-  document.getElementById('monthSummaryBox').innerHTML = 
-    `<span>Jahressumme (Gesamte Dateneingabe)</span><span><b>${fmtT(yearTotalSec)}</b></span>`;
-  document.getElementById('dayBody').innerHTML = rowsHtml;
+function updateDaySummary(x) {
+  $('monthSummaryBox').innerHTML =
+    `<span>Jahressumme (Gesamte Dateneingabe)</span><span><b>${fmtT(x.totalPlanNet)}</b></span>`;
+}
+
+/* Nur die geänderte Zeile und die Summen neu aufbauen (schnell auf dem Handy) */
+function refreshDayRow(d) {
+  const row = $(`row_${d.k}`);
+  if (row) row.outerHTML = dayRowHtml(d);
+  const x = computeStats();
+  $(`mh_${d.m}`).innerHTML = `${MN[d.m]} ${Y}<span>${fmtT(x.planNet[d.m])}</span>`;
+  updateDaySummary(x);
 }
 
 function setDay(k, f, v) {
   const dObj = days.find(x => x.k === k);
-  if (f === 's' && v === 'U') {
-    const currentVacCount = days.filter(d => getDayData(d).s === 'U' && d.k !== k).length;
-    const maxVac = Math.max(0, num(st.vac));
-    if (currentVacCount >= maxVac) {
-      alert(`Der maximale Urlaubsanspruch von ${maxVac} Tagen ist bereits erreicht!`);
-      renderDays();
+  if (!dObj) return;
+  if (f === 's' && v === 'U' && getDayData(dObj).s !== 'U') {
+    const x = computeStats();
+    if (x.takenDays >= x.totalClaimDays) {
+      alert(`Der maximale Urlaubsanspruch von ${x.totalClaimDays} Tagen ist bereits erreicht!`);
+      refreshDayRow(dObj);
       return;
     }
   }
   if (!st.days[k]) { const dat = getDayData(dObj); st.days[k] = { s: dat.s, p: dat.p }; }
-  if (f === 's' && (v === 'U' || v === 'F' || v === 'X')) {
+  if (f === 's' && isStatus(v)) {
     st.days[k].s = v;
     st.days[k].p = '0';
-    const pSel = document.getElementById('p_' + k);
-    if (pSel) pSel.value = '0';
   } else {
     st.days[k][f] = v;
   }
-  save(); renderDays(); summary0();
+  save();
+  refreshDayRow(dObj);
 }
 
-window.setMonthlyActual = function(monthIdx, val) {
+/* --- Reiter 5: Ausgabe --- */
+let editing4 = false;
+function toggleEdit4() {
+  editing4 = !editing4;
+  setEditButton($('mainBtn4'), editing4);
+  renderOut();
+  if (!editing4) save();
+}
+
+function setMonthlyActual(monthIdx, val) {
   const raw = String(val).trim();
-  if (raw === '') { delete st.monthlyActual[monthIdx]; } else { st.monthlyActual[monthIdx] = raw; }
+  if (raw === '') delete st.monthlyActual[monthIdx];
+  else st.monthlyActual[monthIdx] = normHMS(raw);
   save(); renderOut();
-};
+}
 
 function renderOut() {
-  const planNetTotals = monthPlanNetTotals();
-  const totalPlanNet = planNetTotals.reduce((a, b) => a + b, 0);
-  const actualNetTotals = monthActualNetTotals();
-  const baseTotalActualNet = actualNetTotals.reduce((a, b) => a + b, 0);
-  const agreedOtSec = Math.abs(toSec(st.agreedOt));
-  const unpaidVacSec = Math.abs(toSec(st.unpaidVac));
-  
-  const totalActualNet = baseTotalActualNet;
-
+  const x = computeStats();
   let html = '';
   for (let i = 0; i < 12; i++) {
-    const planVal = fmtT(planNetTotals[i]);
-    const actualVal = st.monthlyActual[i] !== undefined ? st.monthlyActual[i] : planVal;
-    const formattedActualVal = typeof actualVal === 'string' && actualVal.includes(':') ? actualVal : fmtT(toSec(actualVal));
+    const planVal = fmtT(x.planNet[i]);
+    const hasActual = st.monthlyActual[i] !== undefined && st.monthlyActual[i] !== '';
+    const actualVal = hasActual ? normHMS(st.monthlyActual[i]) : planVal;
     if (editing4) {
-      html += `<tr>
-        <td>${MN[i]}</td>
-        <td class="r">${planVal}</td>
-        <td><input type="text" value="${esc(formattedActualVal)}" onchange="setMonthlyActual(${i}, this.value)" style="text-align:right;"></td>
-      </tr>`;
+      html += `<tr><td>${MN[i]}</td><td class="r">${planVal}</td>
+        <td><input type="text" value="${esc(hasActual ? actualVal : '')}" placeholder="${planVal}" onchange="setMonthlyActual(${i}, this.value)" style="text-align:right;"></td></tr>`;
     } else {
-      html += `<tr>
-        <td>${MN[i]}</td>
-        <td class="r">${planVal}</td>
-        <td class="r">${esc(formattedActualVal)}</td>
-      </tr>`;
+      html += `<tr><td>${MN[i]}</td><td class="r">${planVal}</td>
+        <td class="r">${esc(actualVal)}${hasActual ? '' : ' <span class="info-txt" style="display:inline">(Plan)</span>'}</td></tr>`;
     }
   }
+  html += `<tr class="sum"><td>Summe (Dateneingabe / Abrechnung 057)</td>
+    <td class="r">${fmtT(x.totalPlanNet)}</td><td class="r">${fmtT(x.totalActualNet)}</td></tr>`;
+  $('outBody').innerHTML = html;
 
-  html += `<tr class="sum">
-    <td>Summe (Dateneingabe / Abrechnung 057)</td>
-    <td class="r">${fmtT(totalPlanNet)}</td>
-    <td class="r">${fmtT(baseTotalActualNet)}</td>
-  </tr>`;
-
-  document.getElementById('outBody').innerHTML = html;
-
-  const contractSec = annualSecSum();
-  let totalClaimSec = 0;
-  days.forEach(d => { totalClaimSec += dayTargetSecForMonth(d.m); });
-  const avgDaySec = totalClaimSec / days.length;
-  const totalClaimDays = Math.max(0, num(st.vac));
-  const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
-  let takenDaysCount = 0;
-  let takenSecTotal = 0;
-  days.forEach(d => {
-    if (getDayData(d).s === 'U') { takenDaysCount++; takenSecTotal += dayTargetSecForMonth(d.m); }
-  });
-  const carrySec = toSec(st.cv);
-  const nettoTargetSec = contractSec - totalClaimHoursSec + (st.ct === 'plus' ? -carrySec : carrySec) + agreedOtSec - unpaidVacSec;
-  const diff = nettoTargetSec - totalActualNet;
-  let diffText = '';
-  if (diff > 0) diffText = `zu wenig geleistet (${fmtT(diff)})`;
-  else if (diff < 0) diffText = `zu viel geleistet (${fmtT(-diff)})`;
+  const diff = x.nettoTargetSec - x.totalActualNet;
+  let diffText;
+  if (diff > 0) diffText = `<span class="neg">zu wenig geleistet (${fmtT(diff)})</span>`;
+  else if (diff < 0) diffText = `<span class="pos">zu viel geleistet (${fmtT(-diff)})</span>`;
   else diffText = `Soll exakt erfüllt (${fmtT(0)})`;
 
-  document.getElementById('sm3').innerHTML =
-    `Vertragliche Arbeitszeit: <b>${fmtT(contractSec)}</b><br>` +
-    `Vertraglicher Urlaub: <b>${totalClaimDays} Tage</b> (${fmtT(totalClaimHoursSec)})<br>` +
-    `Genommener Urlaub: <b>${takenDaysCount} Tage</b> (${fmtT(takenSecTotal)})<br>` +
-    `vereinbarte Überstunden 2027 (positiver Wert): <b>${fmtT(agreedOtSec)}</b><br>` +
-    `unbezahlter Urlaub in 2027 (negativer Wert): <b>${fmtT(unpaidVacSec)}</b><br>` +
-    `<b>Vertraglich zu erfüllende Nettoarbeitszeit (Soll):</b> <b>${fmtT(nettoTargetSec)}</b><br>` +
-    `<b>Tatsächlich geleistete Nettoarbeitszeit (Dateneingabe):</b> <b>${fmtT(totalActualNet)}</b><br>` +
-    `Differenz: <b>(${diffText})</b>`;
+  $('sm3').innerHTML =
+    `Vertragliche Arbeitszeit: <b>${fmtT(x.contractSec)}</b><br>` +
+    `Vertraglicher Urlaub: <b>${x.totalClaimDays} Tage</b> (${fmtT(x.totalClaimHoursSec)})<br>` +
+    `Genommener Urlaub: <b>${x.takenDays} Tage</b> (${fmtT(x.takenSec)})<br>` +
+    `${st.ct === 'plus' ? '−' : '+'} Übertrag aus Vorjahr: <b>${fmtT(x.carrySec)}</b><br>` +
+    `vereinbarte Überstunden ${Y}: <b>${fmtT(x.agreedOtSec)}</b><br>` +
+    `unbezahlter Urlaub in ${Y}: <b>${fmtT(x.unpaidVacSec)}</b><br>` +
+    `<b>Vertraglich zu erfüllende Nettoarbeitszeit (Soll):</b> <b>${fmtT(x.nettoTargetSec)}</b><br>` +
+    `<b>Tatsächlich geleistete Nettoarbeitszeit:</b> <b>${fmtT(x.totalActualNet)}</b><br>` +
+    `Differenz: <b>${diffText}</b>`;
 }
 
-document.getElementById('vac').value = st.vac;
-document.getElementById('ct').value = st.ct;
-document.getElementById('cv').value = st.cv;
-document.getElementById('agreedOt').value = st.agreedOt;
-document.getElementById('unpaidVac').value = st.unpaidVac;
+/* ========================================================================= */
+/* 5. DATENSICHERUNG                                                         */
+/* ========================================================================= */
 
+function backupFileName() {
+  const n = new Date();
+  return `Arbeitszeit-${Y}-Sicherung-${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}.json`;
+}
+function backupBlob() {
+  return new Blob([JSON.stringify({ app: 'arbeitszeit', year: Y, exported: new Date().toISOString(), data: st }, null, 2)], { type: 'application/json' });
+}
+
+function exportData() {
+  const url = URL.createObjectURL(backupBlob());
+  const a = document.createElement('a');
+  a.href = url; a.download = backupFileName();
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  $('backupInfo').textContent = `Sicherung erstellt: ${backupFileName()}`;
+}
+
+async function shareData() {
+  try {
+    const file = new File([backupBlob()], backupFileName(), { type: 'application/json' });
+    await navigator.share({ files: [file], title: `Arbeitszeit ${Y} Sicherung` });
+  } catch (e) {
+    if (e && e.name !== 'AbortError') exportData();
+  }
+}
+
+function importData(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const parsed = safeParse(reader.result);
+    const data = parsed && parsed.app === 'arbeitszeit' && parsed.data ? parsed.data : parsed;
+    if (!data || typeof data !== 'object' || Array.isArray(data) || !('days' in data || 'monthlyAnnual' in data || 'vac' in data)) {
+      alert('Diese Datei ist keine gültige Sicherung der Arbeitszeiterfassung.');
+      return;
+    }
+    if (parsed.year && parsed.year !== Y && !confirm(`Die Sicherung stammt aus dem Jahr ${parsed.year}, diese App ist für ${Y}. Trotzdem laden?`)) return;
+    if (!confirm('Alle aktuellen Daten werden durch die Sicherung ersetzt. Fortfahren?')) return;
+    st = sanitizeState(data);
+    save();
+    location.reload();
+  };
+  reader.readAsText(file);
+}
+
+function resetData() {
+  if (!confirm('Wirklich ALLE Daten löschen und auf den Ausgangszustand zurücksetzen?')) return;
+  if (!confirm('Letzte Warnung: Ohne Sicherungsdatei sind die Daten danach unwiederbringlich weg. Fortfahren?')) return;
+  localStorage.removeItem(KEY);
+  localStorage.removeItem(LEGACY_KEY);
+  location.reload();
+}
+
+/* ========================================================================= */
+/* 6. START                                                                  */
+/* ========================================================================= */
+
+document.title = `Arbeitszeit ${Y}`;
+document.querySelectorAll('.yr').forEach(e => { e.textContent = Y; });
+if (navigator.share && navigator.canShare && typeof File === 'function') {
+  try {
+    if (navigator.canShare({ files: [new File([''], 'x.json', { type: 'application/json' })] })) $('shareBtn').style.display = '';
+  } catch (e) {}
+}
+fillMasterInputs();
 renderMonthlyAnnualTable();
 summary0();
 renderPattern();
