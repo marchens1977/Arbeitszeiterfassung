@@ -50,6 +50,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-16 | Sicherung als Text (kopieren/einfügen), Anzeige der letzten Sicherung mit Erinnerung nach 30 Tagen, Dateiauswahl ohne Typfilter, Hinweis zum Download-Ordner im Browser | #2 |
 | 2026-11-16 | Installierbare App (PWA): `manifest.json`, Symbole, `sw.js`, Knopf „App installieren“ | #3 |
 | 2026-11-16 | Name unter dem Symbol auf „Arbeitszeiterfassung“ geändert | #4 |
+| 2026-11-16 | Projekt-Tagebuch `CLAUDE.md` angelegt | #5 |
 
 ## 4. Offene Ideen / nächste Schritte
 
