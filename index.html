@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Arbeitszeit">
 <title>Arbeitszeit</title>
 <style>
 body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;padding:12px;background:#f4f6f9;color:#333}
@@ -88,6 +94,12 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     </table>
 
     <div class="box" id="sm0"></div>
+  </div>
+
+  <div class="card" id="installCard" style="display:none">
+    <h2>Als App installieren</h2>
+    <p class="note">Die Arbeitszeiterfassung kann wie eine normale App mit eigenem Symbol auf dem Startbildschirm abgelegt werden und funktioniert dann auch ohne Internet.</p>
+    <button type="button" class="btn btn-primary" onclick="installApp()">App installieren</button>
   </div>
 
   <div class="card">
@@ -912,6 +924,25 @@ if (navigator.share && navigator.canShare && typeof File === 'function') {
     if (navigator.canShare({ files: [new File([''], 'x.json', { type: 'application/json' })] })) $('shareBtn').style.display = '';
   } catch (e) {}
 }
+/* --- Installierbare App (PWA) --- */
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installPrompt = e;
+  $('installCard').style.display = '';
+});
+window.addEventListener('appinstalled', () => { installPrompt = null; $('installCard').style.display = 'none'; });
+async function installApp() {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt = null;
+  $('installCard').style.display = 'none';
+}
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+
 fillMasterInputs();
 showLastBackup();
 renderMonthlyAnnualTable();
