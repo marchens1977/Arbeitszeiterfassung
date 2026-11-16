@@ -1,6 +1,6 @@
 {
   "name": "Arbeitszeiterfassung",
-  "short_name": "Arbeitszeit",
+  "short_name": "Arbeitszeiterfassung",
   "description": "Arbeitszeit, Urlaub und Jahresbilanz erfassen",
   "start_url": "./index.html",
   "scope": "./",
