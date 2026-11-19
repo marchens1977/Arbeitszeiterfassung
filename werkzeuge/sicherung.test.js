@@ -11,6 +11,7 @@ const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'az-shot-'));
   console.log('last backup initial:', await t('#lastBackupInfo'));
   await p.evaluate(() => { st.vac = '27'; save(); });
   await p.click('button:has-text("Sicherung als Text kopieren")');
+  await p.waitForFunction(() => document.querySelector('#backupInfo').innerText.trim() !== '', null, { timeout: 5000 }).catch(() => {});
   console.log('info:', await t('#backupInfo'));
   console.log('last backup now:', await t('#lastBackupInfo'));
   const clip = await p.evaluate(() => navigator.clipboard.readText());
