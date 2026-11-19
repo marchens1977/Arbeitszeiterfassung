@@ -11,7 +11,7 @@ const ICONS = path.join(__dirname, '..', 'icons');
     const inner = maskable ? Math.round(size * 0.8) : size;
     const off = Math.round((size - inner) / 2);
     const body = maskable
-      ? `<div style="width:${size}px;height:${size}px;background:#2563eb"><div style="position:absolute;left:${off}px;top:${off}px;width:${inner}px;height:${inner}px">${svg.replace('rx="110" fill="#2563eb"', 'fill="none"')}</div></div>`
+      ? `<div style="width:${size}px;height:${size}px;background:#002D72"><div style="position:absolute;left:${off}px;top:${off}px;width:${inner}px;height:${inner}px">${svg.replace('rx="110" fill="#002D72"', 'fill="none"')}</div></div>`
       : svg;
     await p.setContent(`<html><body style="margin:0;background:transparent">${body}</body></html>`);
     await p.screenshot({ path: path.join(ICONS, file), omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
