@@ -1,7 +1,7 @@
 /* Offline-Helfer (Service Worker):
    Speichert die App-Dateien, damit die App auch ohne Internet startet.
    Bei jeder Änderung an der App die VERSION hochzählen, damit alle Geräte die neue Fassung bekommen. */
-const VERSION = 'arbeitszeit-v3';
+const VERSION = 'arbeitszeit-v4';
 const FILES = [
   './',
   './index.html',
@@ -23,11 +23,16 @@ self.addEventListener('activate', event => {
   );
 });
 
+/* Die App fragt nach der installierten Version (Anzeige unter "App-Updates"). */
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'GET_VERSION' && event.ports[0]) event.ports[0].postMessage({ version: VERSION });
+});
+
 /* Erst das Netz fragen (damit Updates sofort ankommen), bei Fehler aus dem Speicher laden. */
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then(resp => {
         const copy = resp.clone();
         caches.open(VERSION).then(c => c.put(event.request, copy)).catch(() => {});
