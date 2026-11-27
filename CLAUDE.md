@@ -103,6 +103,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Nach Test des Nutzers (Excel): Eingabefelder der Dateneingabe mit Musterwoche vorbelegt (Formel, grau-kursiv; eigene Einträge fett, per Regel `ISFORMULA`), alle gesperrten/berechneten Felder grau (Gilt-Spalten mit grauer Schrift), Hilfsspalten ausgeblendet, Spalten für „Teammentor*in“ verbreitert (auch Schicht-/Tagesplan); Firmenname im Tagebuch durch „Arbeitgeber“ ersetzt | direkt auf `main` |
 | 2026-11-27 | Nach 2. Test (Excel): Eingabefelder schwarz und normal (Vorbelegung nicht mehr grau-kursiv, eigene Einträge weiter fett); gesperrte/berechnete Felder kräftiger grau `#D9D9D9` (vorher `#F2F2F2`, wirkte wie Weiß), graue Schrift `#595959` | direkt auf `main` |
 | 2026-11-27 | Neuer Aufbau (Abschnitt 10a): offene **Eingabe-Datei** + privater **Stundenzettel** je Mitarbeiter, Ordner „Schichtplanung“/„Steuerung“; „krank“ → „abwesend (Gutschrift)“ (auch Hauptvorlage); Schichtplan erkennt Vertragsende über den Stundenzettel (Blatt `Werte`); neues Werkzeug `vorlagen-bauen.py`; Kettentest mit 57 Prüfpunkten | direkt auf `main` |
+| 2026-11-27 | Nach Test V4: Eingabe-Datei ohne Blatt „Start“ (Jahr/Urlaubsanspruch/Soll/Vertragsmonate/057 kommen per Verknüpfung aus dem Stundenzettel, Blatt `Vorgaben`), Name in den Titeln, keine Nummern, **Reststunden zum Jahresende** (rot „noch zu leisten“, grün „zu viel geleistet“, fett); Stundenzettel heißen „Stundenzettel 01–35.xlsx“; Schicht- UND Tagesplan lesen direkt die Eingabe-Dateien (kein Speichern des Stundenzettels/Schichtplans mehr nötig); ohne Vorgabe gilt „Vertrag besteht“; Kettentest 64 Prüfpunkte | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -161,7 +162,7 @@ Vorhandene Werkzeuge (benötigen Node.js und Playwright mit Chromium; in der Cla
 | `node werkzeuge/name-und-aussehen.test.js` | Angleichung an Excel: Mitarbeitername (Hinweis ohne Komma, große Anzeige, bleibt nach Neuladen, steckt in der Sicherung), Farben gelb/grau/hellblau, Uhrzeiten 11:00–17:00, Reiter-/Überschriften; macht Handy-Screenshots. Endet mit „ERGEBNIS: alles in Ordnung“. |
 | `node werkzeuge/offline-app.test.js` | Startet einen lokalen Webserver und prüft Manifest, Symbole, Offline-Helfer und den Start ohne Internet |
 | `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT] [--anspruch TAGE] [--ab-monat N] [--urlaub K]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. `--ab-monat 7` = Ausscheiden ab Juli (Erwartung bei 30 Tagen: 15 Tage, 117:00:00), `--urlaub 15` trägt 15 Urlaubstage im Januar ein. |
-| `python3 werkzeuge/plaene.test.py` | Ganze Kette (Abschnitt 10a): erzeugt ein Mini-Paket in zwei Ordnern, speichert Eingabe-Dateien mit LibreOffice (Urlaubswarnung), aktualisiert wie Excel (gespeicherte Werte) Stundenzettel (muss **genau wie die Hauptvorlage** rechnen), Schichtplan und Tagesplan und prüft Namen, Sortierung, Zeiten, Urlaub, „abwesend“, Teammentor*in, frei, HO, Platzhalter und das Vertragsende. 57 Prüfpunkte, Ende „ERGEBNIS: alles in Ordnung“ (ca. 2 Min). |
+| `python3 werkzeuge/plaene.test.py` | Ganze Kette (Abschnitt 10a, Stand V5): Mini-Paket in zwei Ordnern; Eingabe-Dateien speichern (Titel, ohne Vorgaben); Schicht- und Tagesplan direkt aus den Eingabe-Dateien; Stundenzettel (muss **genau wie die Hauptvorlage** rechnen, 057-Wert); Eingabe holt Vorgaben (Reststunden = Stundenzettel sekundengenau, Urlaubswarnung); Vertragsende. Aktualisieren wie Excel (gespeicherte Werte). 64 Prüfpunkte, Ende „ERGEBNIS: alles in Ordnung“ (ca. 3 Min). |
 | `python3 werkzeuge/vorlagen-bauen.py` | Kein Test: baut aus der Hauptvorlage `excel/vorlagen/Eingabe.xlsx` und `Stundenzettel-Vorlage.xlsx` neu – **nach jeder Änderung an der Hauptvorlage ausführen**, danach `plaene.test.py` |
 | `python3 werkzeuge/plaene-erzeugen.py --ordner ORDNER [...]` | Kein Test: erzeugt Mitarbeiter-Dateien, `Schichtplan.xlsx`, `MA-Tagesplan.xlsx` (Optionen siehe Kopf der Datei; Mini-Paket: `--plaetze 3 --wochen 1 --tage 5 --mitarbeiter "Beispiel, Anna" "Test, Ben" --beispieldaten`) |
 | `werkzeuge/xlsx_spalten.py` | Kein Test: Hilfsfunktion `spalten_einfuegen(wb, blatt, idx)` – fügt Spalten ein und zieht alle Bezüge (Formeln, Namen, Formatierung, Prüfungen, Verbindungen) mit; danach immer `excel-pruefen.py` alt/neu vergleichen |
@@ -300,7 +301,13 @@ Test beim Arbeitgeber (Mini-Paket: „Beispiel, Anna.xlsx“, „Test, Ben.xlsx�
 - [ ] Ben in der Datei auf „Urlaub“ am 04.01. setzen, speichern → Schichtplan aktualisieren, speichern → Tagesplan aktualisieren → Ben grau.
 - [ ] „Kennwort zum Ändern“ an einer Datei setzen → Schichtplan aktualisiert trotzdem.
 
-Test Mini-Paket V4 (zwei Ordner nebeneinander: „Schichtplanung“ und „Steuerung“):
+Test Mini-Paket V5 (zwei Ordner nebeneinander: „Schichtplanung“ und „Steuerung“):
+- [ ] Eingabe-Dateien öffnen, speichern → Schichtplan und Tagesplan direkt aktualisieren → gefüllt (ohne Stundenzettel anzufassen).
+- [ ] Titel mit Namen, keine Nummern, kein Blatt „Start“; oben „noch keine Vorgabe vom Steuerer“.
+- [ ] Stundenzettel 02 (Ben) öffnen → aktualisieren → speichern; dann „Test, Ben“ öffnen → aktualisieren → speichern → oben Reststunden (rot).
+- [ ] Ausscheiden: Stundenzettel 02 Januar 0:00 → speichern → „Test, Ben“ aktualisieren, speichern → Schichtplan aktualisieren → Ben im Januar leer.
+
+Test Mini-Paket V4 (erledigt; Ergebnis führte zu V5):
 - [ ] Dateien richtig verteilen (alle „Stundenzettel …“ nach „Steuerung“, Rest nach „Schichtplanung“).
 - [ ] Eingabe-Dateien (Anna, Ben, Mustermann 03) öffnen, speichern; Blatt „Start“ zeigt Name, keine Vertragsdaten.
 - [ ] Stundenzettel öffnen → aktualisieren → Tagesliste zeigt Bens Einträge, Stammdaten zeigen Name → speichern (alle drei).
@@ -311,8 +318,28 @@ Test Mini-Paket V4 (zwei Ordner nebeneinander: „Schichtplanung“ und „Steue
 
 ### 10a. Geplanter Umbau: Eingabe-Datei (offen) + Stundenzettel (privat) – Entscheidungen vom 27.11.2026
 
-Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. **Gebaut am 27.11.2026** (nach erfolgreichem Test von Mini-Paket V3);
-Mini-Paket V4 (zwei Ordner) zum Test beim Arbeitgeber verschickt. Abschnitt 10 gilt weiter für Schicht-/Tagesplan, außer wo hier anders.
+Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. **Gebaut am 27.11.2026**; nach Test V4 überarbeitet (Stand V5, siehe
+„Stand V5“ unten – geht vor, wo es den Punkten darunter widerspricht). Abschnitt 10 gilt weiter für Schicht-/Tagesplan, außer wo hier anders.
+
+**Stand V5 (Wünsche nach Test V4):**
+- Eingabe-Datei: kein Blatt „Start“ mehr; Blätter Anleitung, Musterwoche, Dateneingabe, Urlaub (+ versteckt Listen, Export, Vorgaben).
+  Titel „Musterwoche … – Name“, „Dateneingabe 2027 – Name“, „Urlaubsübersicht – Name“ (keine Nummern). Name weiter aus dem Dateinamen
+  (Hilfszellen Listen!O2:O4).
+- **Vorgaben** kommen per Verknüpfung aus dem Stundenzettel (dort Blatt `Vorgaben`: A1 Jahr, B1 Urlaubsanspruch anteilig, C1 Soll Sek.,
+  Zeile 3 ohne Vertrag (1), Zeile 4 Regel-Tag Sek., Zeile 5 Wert 057 Sek. (0 wenn leer), Zeile 6 = 1 wenn 057-Wert vorhanden – leere
+  Zellen kommen über Verknüpfungen als 0 an, darum das Kennzeichen). Ohne Vorgaben: Jahr 2027, Vertrag in allen Monaten,
+  keine Urlaubswarnung, Hinweis „noch keine Vorgabe vom Steuerer“. Mitarbeiter können die Verknüpfung nicht aktualisieren (kein Zugriff) –
+  es bleiben die zuletzt vom Steuerer gespeicherten Vorgaben. Nach Vertragsänderung: Stundenzettel speichern → Eingabe-Datei öffnen →
+  aktualisieren → speichern.
+- **Reststunden** (Dateneingabe H3:J3): Soll − Ist, Ist je Monat = Plan aus der Dateneingabe (wie Auswertung, inkl. Feiertags-Regel-Tag,
+  ohne Urlaub, nur Vertragsmonate) bzw. 057-Wert. Text „noch zu leisten: hh:mm Std.“ (rot) / „zu viel geleistet: …“ (grün) / „Soll genau
+  erreicht“, fett. Rechnet identisch zum Stundenzettel (Test vergleicht die Sekunden). Nutzer nimmt in Kauf, dass man daraus auf den
+  Vertrag schließen kann.
+- Stundenzettel heißen **„Stundenzettel 01.xlsx“ … „35.xlsx“** (fest je Platz). Beim Mitarbeiterwechsel umstellen: Stundenzettel (Quelle =
+  neue Eingabe-Datei), Schichtplan und Tagesplan (je Quelle ändern). Die Eingabe-Datei zeigt weiter auf denselben Stundenzettel.
+- **Schicht- und Tagesplan lesen beide direkt die Eingabe-Dateien** (je Platz eine Verknüpfung, Blatt `Daten`; keine Blätter `Vertrag`/`Werte`
+  mehr). Monate ohne Vertrag erkennt die Eingabe-Datei selbst („kein Vertrag“) → im Plan leer. Kein Speichern von Stundenzettel oder
+  Schichtplan nötig, damit die Pläne aktuell sind – nur die Mitarbeiter müssen ihre Eingabe-Datei speichern.
 
 Umsetzung:
 - `vorlagen-bauen.py` leitet aus der Hauptvorlage ab:

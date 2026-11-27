@@ -2,12 +2,13 @@
 """Erzeugt den kompletten Ordneraufbau (ohne Makros, nur Excel-Verknüpfungen) unter AUSGABE:
 
   AUSGABE/Schichtplanung/   (alle Mitarbeiter)  „Nachname, Vorname.xlsx“ (Eingabe-Datei), Schichtplan.xlsx, MA-Tagesplan.xlsx
-  AUSGABE/Steuerung/        (nur Steuerer)      „Stundenzettel Nachname, Vorname.xlsx“
+  AUSGABE/Steuerung/        (nur Steuerer)      „Stundenzettel 01.xlsx“ … (fest je Platz; Name steht in der Datei)
 
 Vorlagen: excel/vorlagen/Eingabe.xlsx und Stundenzettel-Vorlage.xlsx (vorher: python3 werkzeuge/vorlagen-bauen.py).
 Datenfluss (Aktualisieren in Excel: Daten → Links bearbeiten → Werte aktualisieren):
-  Eingabe-Datei (Blatt Export) → Stundenzettel (Blatt Daten)        [Steuerer]
-  Eingabe-Datei (Export) + Stundenzettel (Blatt Vertrag) → Schichtplan.xlsx (Daten, Vertrag → Werte) → MA-Tagesplan.xlsx
+  Eingabe-Datei (Blatt Export) → Stundenzettel (Blatt Daten)                         [nur Steuerer]
+  Stundenzettel (Blatt Vorgaben: Jahr, Urlaub, Soll, Vertragsmonate, 057) → Eingabe-Datei (Blatt Vorgaben)
+  Eingabe-Datei (Export) → Schichtplan.xlsx (Daten)   und   Eingabe-Datei (Export) → MA-Tagesplan.xlsx (Daten)
 
 Aufruf:
   python3 werkzeuge/plaene-erzeugen.py --ordner AUSGABE [--plaetze 35] [--wochen 52] [--tage alle]
@@ -94,28 +95,29 @@ def regel(ws, bereich, formel, fill=None, font=None):
 def mitarbeiter_dateien(ordner, namen, beispieldaten):
     for i, n in enumerate(namen):
         # privater Stundenzettel mit Verknüpfung auf die Eingabe-Datei im Nachbarordner
+        szname = f'{SZ}{i + 1:02d}.xlsx'                   # fest je Platz – ändert sich beim Mitarbeiterwechsel nicht
         sz = openpyxl.load_workbook(os.path.join(VORLAGEN, 'Stundenzettel-Vorlage.xlsx'))
         externer_link(sz, f'../{OFFEN}/{n}.xlsx', ['Export'])
-        sz.save(os.path.join(ordner, PRIVAT, SZ + n + '.xlsx'))
-        # offene Eingabe-Datei
+        sz.save(os.path.join(ordner, PRIVAT, szname))
+        # offene Eingabe-Datei mit Verknüpfung auf die Vorgaben im Stundenzettel
         ziel = os.path.join(ordner, OFFEN, n + '.xlsx')
-        shutil.copy(os.path.join(VORLAGEN, 'Eingabe.xlsx'), ziel)
+        wb = openpyxl.load_workbook(os.path.join(VORLAGEN, 'Eingabe.xlsx'))
+        externer_link(wb, f'../{PRIVAT}/{szname}', ['Vorgaben'])
+        m, d = wb['Musterwoche'], wb['Dateneingabe']
         if beispieldaten and i < 2:
-            wb = openpyxl.load_workbook(ziel)
-            m, d = wb['Musterwoche'], wb['Dateneingabe']
             if i == 0:   # Anna: montags Homeoffice, 05.01. Urlaub, Fr 12:00
                 m['D5'] = 'Homeoffice'; d['D8'] = 'Urlaub'; m['B9'] = dt.time(12, 0)
             else:        # Ben: 06.01. abwesend (Gutschrift), 07.01. Teammentor*in, 08.01. frei, Beginn 13:00 mit 45 Min
                 for r in range(5, 10): m[f'B{r}'] = dt.time(13, 0); m[f'C{r}'] = 45
                 d['F9'] = 'abwesend (Gutschrift)'; d['F10'] = 'Teammentor*in'; d['D11'] = 'Frei'
-            wb.save(ziel)
+        wb.save(ziel)
 
 
-# ---------------------------------------------------------------- Schichtplan
-def schichtplan(ordner, namen, n_wochen):
+# ---------------------------------------------------------------- Quellen
+def quellen(wb, namen):
+    """Blätter „Mitarbeiter“ (Plätze, Sortierung nach Nachname) und „Daten“ (versteckt, je Platz eine Verknüpfung auf das
+    Blatt Export der Eingabe-Datei im selben Ordner). Namen SPDatum/SPWerte. Für Schichtplan UND Tagesplan."""
     N = len(namen)
-    wb = openpyxl.Workbook()
-    an = wb.active; an.title = 'Anleitung'
     ma = wb.create_sheet('Mitarbeiter')
     da = wb.create_sheet('Daten')
 
@@ -124,13 +126,8 @@ def schichtplan(ordner, namen, n_wochen):
     for k in range(1, ZEILEN + 1):
         r = 3 + k
         da[f'A{r}'] = f'=WORKDAY(DATE({JAHR},1,1)-1,{k})'; da[f'A{r}'].number_format = 'DD.MM.YYYY'
-    ve = wb.create_sheet('Vertrag')
-    ve['A1'] = 'Vertrag je Monat (1 = ja) aus dem Stundenzettel – Zeile = Platz-Nr. + 1'
     for s, n in enumerate(namen, start=1):
         nr = externer_link(wb, n + '.xlsx', ['Export'])
-        nv = externer_link(wb, f'../{PRIVAT}/{SZ}{n}.xlsx', ['Vertrag'])
-        for mo in range(12):
-            ve.cell(1 + s, 1 + mo).value = f'=[{nv}]Vertrag!{L(1 + mo)}$1'
         c0 = 2 + (s - 1) * 3
         da.cell(1, c0).value = f'=[{nr}]Export!$B$1'
         da.cell(2, c0).value = f'=[{nr}]Export!$D$1'
@@ -141,25 +138,12 @@ def schichtplan(ordner, namen, n_wochen):
             da.cell(r, c0 + 2).value = f'=[{nr}]Export!D{r}'
             da.cell(r, c0).number_format = 'hh:mm'
     letzte_sp = L(1 + 3 * N)
-    # Werte = Daten, aber leer in Monaten ohne Vertrag (Austritt/Eintritt); diese Werte liest auch der Tagesplan
-    we = wb.create_sheet('Werte')
-    we['A3'] = 'Datum'
-    for r in range(ERSTE, LETZTE + 1):
-        we[f'A{r}'] = f'=Daten!A{r}'; we[f'A{r}'].number_format = 'DD.MM.YYYY'
-        for s in range(1, N + 1):
-            c0 = 2 + (s - 1) * 3
-            ok = f'N(INDEX(Vertrag!$A${1 + s}:$L${1 + s},MONTH($A{r})))=1'
-            for j in range(3):
-                q = f'Daten!{L(c0 + j)}{r}'
-                we.cell(r, c0 + j).value = (f'=IF({ok},IF(AND(ISNUMBER({q}),{q}=0),"",{q}),"")' if j != 1
-                                            else f'=IF({ok},{q},"")')
-            we.cell(r, c0).number_format = 'hh:mm'
-    wb.defined_names['SPDatum'] = DefinedName('SPDatum', attr_text=f'Werte!$A${ERSTE}:$A${LETZTE}')
-    wb.defined_names['SPWerte'] = DefinedName('SPWerte', attr_text=f'Werte!$B${ERSTE}:${letzte_sp}${LETZTE}')
-    for w in (da, ve, we): w.sheet_state = 'hidden'
+    wb.defined_names['SPDatum'] = DefinedName('SPDatum', attr_text=f'Daten!$A${ERSTE}:$A${LETZTE}')
+    wb.defined_names['SPWerte'] = DefinedName('SPWerte', attr_text=f'Daten!$B${ERSTE}:${letzte_sp}${LETZTE}')
+    da.sheet_state = 'hidden'
 
     # --- Mitarbeiter: Liste aller Plätze + Sortierung nach Nachname
-    ma['A1'] = 'Mitarbeiter im Schichtplan'; ma['A1'].font = Font(bold=True, size=14, color=BLAU)
+    ma['A1'] = 'Mitarbeiter (Plätze)'; ma['A1'].font = Font(bold=True, size=14, color=BLAU)
     ma['A2'] = ('Jede Zeile ist mit einer Datei im selben Ordner verknüpft. Neuer Mitarbeiter: Datei umbenennen '
                 '(„Nachname, Vorname.xlsx“), dann hier Daten → Links bearbeiten → alte Datei markieren → „Quelle ändern“ '
                 '→ neue Datei wählen. Platzhalter „Mustermann, Max …“ werden nicht angezeigt.')
@@ -184,6 +168,15 @@ def schichtplan(ordner, namen, n_wochen):
     for c, w in zip('ABCDEFGHIJKL', (5, 26, 26, 6, 18, 6, 2, 8, 8, 26, 16, 18)): ma.column_dimensions[c].width = w
     for c in 'EF': ma.column_dimensions[c].hidden = True
     ma.freeze_panes = 'A4'
+    return ma
+
+
+# ---------------------------------------------------------------- Schichtplan
+def schichtplan(ordner, namen, n_wochen):
+    N = len(namen)
+    wb = openpyxl.Workbook()
+    an = wb.active; an.title = 'Anleitung'
+    quellen(wb, namen)
 
     # --- Wochenblätter
     montag = dt.date(JAHR, 1, 4)
@@ -236,29 +229,29 @@ def schichtplan(ordner, namen, n_wochen):
     zeilen = [
         ('Schichtplan – Anleitung', True),
         ('Was ist das?', True),
-        ('Der Schichtplan zeigt für jede Woche, wer wann arbeitet. Die Werte kommen automatisch aus den Eingabe-Dateien '
-         'der Mitarbeiter („Nachname, Vorname.xlsx“) im selben Ordner. Ob in einem Monat ein Vertrag besteht, liest er aus den '
-         'Stundenzetteln im Ordner „Steuerung“ – dort darf nur der Steuerer hinein.', False),
+        ('Der Schichtplan zeigt für jede Woche, wer wann arbeitet. Die Werte kommen direkt aus den Eingabe-Dateien der '
+         'Mitarbeiter („Nachname, Vorname.xlsx“) im selben Ordner. Monate ohne Vertrag bleiben leer (das steht in der '
+         'Eingabe-Datei, vom Steuerer aus dem Stundenzettel übernommen).', False),
         ('Mitarbeiter (nicht Steuerer)', True),
         ('Beim Öffnen fragt Excel evtl. nach dem Aktualisieren von Verknüpfungen: „Nicht aktualisieren“ wählen bzw. die '
          'Meldung schließen. Du siehst den Stand, den der Steuerer zuletzt gespeichert hat.', False),
         ('Aktualisieren (ohne Makros)', True),
-        ('Reihenfolge für den Steuerer: Mitarbeiter speichern ihre Eingabe-Datei → Stundenzettel aktualisieren und speichern '
-         '(nur bei Vertragsänderungen nötig) → Schichtplan aktualisieren und speichern → MA-Tagesplan aktualisieren.', False),
+        ('Mitarbeiter speichern ihre Eingabe-Datei → Schichtplan bzw. MA-Tagesplan öffnen und aktualisieren. '
+         'Beide lesen direkt aus den Eingabe-Dateien und sind voneinander unabhängig.', False),
         ('1. Datei öffnen. Erscheint oben ein gelber Balken „Sicherheitswarnung … Verknüpfungen“: „Inhalt aktivieren“ klicken.', False),
         ('2. Sonst: Menü Daten → Links bearbeiten (bzw. Verknüpfungen bearbeiten) → alle markieren → „Werte aktualisieren“.', False),
-        ('3. Speichern – erst dann bekommt der MA-Tagesplan die neuen Werte.', False),
+        ('3. Speichern, damit Mitarbeiter beim Öffnen den neuen Stand sehen.', False),
         ('Wichtig: Es zählen die zuletzt GESPEICHERTEN Werte der Mitarbeiter-Dateien.', False),
         ('Farben', True),
         ('Grün = Urlaub oder Feiertag · Grau = abwesend (Grund wird nicht angezeigt) · Hellgrau = frei · '
          'Gelb = Homeoffice · Hellblau = Teammentor*in', False),
         ('Mitarbeiter wechseln', True),
         ('1. Im Ordner „Schichtplanung“ die Eingabe-Datei umbenennen („Nachname, Vorname.xlsx“), öffnen, speichern.', False),
-        ('2. Im Ordner „Steuerung“ den Stundenzettel umbenennen („Stundenzettel Nachname, Vorname.xlsx“), öffnen, '
+        ('2. Im Ordner „Steuerung“ den Stundenzettel mit derselben Platz-Nr. öffnen (Name bleibt „Stundenzettel NN.xlsx“), '
          'Daten → Links bearbeiten → alte Eingabe-Datei markieren → „Quelle ändern“ → neue Eingabe-Datei wählen; '
-         'Stammdaten anpassen; speichern.', False),
-        ('3. Im Schichtplan: Daten → Links bearbeiten → beide alten Namen (Eingabe-Datei und Stundenzettel) jeweils markieren → '
-         '„Quelle ändern“ → neue Datei wählen → speichern. Der MA-Tagesplan muss NICHT angepasst werden.', False),
+         'Stammdaten anpassen; speichern. Danach die Eingabe-Datei öffnen → Werte aktualisieren → speichern.', False),
+        ('3. Im Schichtplan UND im MA-Tagesplan: Daten → Links bearbeiten → alten Namen markieren → „Quelle ändern“ → '
+         'neue Eingabe-Datei wählen → speichern.', False),
         ('Schutz', True),
         ('Blätter sind ohne Passwort geschützt. Gegen fremde Änderungen: Datei → Speichern unter → Tools → '
          'Allgemeine Optionen → „Kennwort zum Ändern“ (NICHT „Kennwort zum Öffnen“, sonst klappt das Aktualisieren nicht).', False),
@@ -273,39 +266,19 @@ def schichtplan(ordner, namen, n_wochen):
 
 
 # ---------------------------------------------------------------- MA-Tagesplan
-def tagesplan(ordner, N, n_tage):
+def tagesplan(ordner, namen, n_tage):
+    N = len(namen)
     wb = openpyxl.Workbook()
     ue = wb.active; ue.title = 'Übersicht'
-    ma = wb.create_sheet('Mitarbeiter'); da = wb.create_sheet('Daten')
-    nr = externer_link(wb, 'Schichtplan.xlsx', ['Mitarbeiter', 'Werte'])
-    letzte_sp = L(1 + 3 * N)
-    # Daten: Spiegel des Schichtplan-Blatts „Daten“
-    da['A3'] = 'Datum'
-    for r in range(ERSTE, LETZTE + 1):
-        da[f'A{r}'] = f'=WORKDAY(DATE({JAHR},1,1)-1,{r - 3})'; da[f'A{r}'].number_format = 'DD.MM.YYYY'
-        for c in range(2, 2 + 3 * N):
-            da.cell(r, c).value = f'=[{nr}]Werte!{L(c)}{r}'
-    wb.defined_names['TPDatum'] = DefinedName('TPDatum', attr_text=f'Daten!$A${ERSTE}:$A${LETZTE}')
-    wb.defined_names['TPWerte'] = DefinedName('TPWerte', attr_text=f'Daten!$B${ERSTE}:${letzte_sp}${LETZTE}')
-    da.sheet_state = 'hidden'
-    # Mitarbeiter: sortierte Liste aus dem Schichtplan (Platz-Nr., Vorname, Nachname)
-    for i, h in enumerate(('Position', 'Platz-Nr.', 'Vorname', 'Nachname')): ma.cell(3, 1 + i, h)
-    for p in range(1, N + 1):
-        r = 3 + p
-        ma[f'A{r}'] = p
-        ma[f'B{r}'] = f'=[{nr}]Mitarbeiter!I{r}'              # Verknüpfungen nur als einfache Bezüge
-        ma[f'E{r}'] = f'=[{nr}]Mitarbeiter!K{r}'
-        ma[f'F{r}'] = f'=[{nr}]Mitarbeiter!L{r}'
-        ma[f'C{r}'] = f'=IF(ISNUMBER(E{r}),"",E{r})'          # leere Zelle kommt als 0 an
-        ma[f'D{r}'] = f'=IF(ISNUMBER(F{r}),"",F{r})'
-    ma.sheet_state = 'hidden'
+    ma = quellen(wb, namen); ma.sheet_state = 'hidden'
 
     tage = [d for d in werktage(JAHR) if d not in feiertage_hessen(JAHR) and d >= dt.date(JAHR, 1, 4)]
     if n_tage: tage = tage[:n_tage]
     ue['A1'] = 'MA-Tagesplan – Übersicht'; ue['A1'].font = Font(bold=True, size=14, color=BLAU)
     ue['A2'] = ('Ein Blatt je Arbeitstag (ohne Wochenenden und hessische Feiertage). Namen, Beginn, Pause und Anmerkung kommen '
-                'aus dem Schichtplan (dort zuerst aktualisieren und speichern; hier dann Daten → Links bearbeiten → '
-                '„Werte aktualisieren“). Gelbe Kampagnen-Felder trägst du selbst ein. Grau = an dem Tag nicht da.')
+                'direkt aus den Eingabe-Dateien der Mitarbeiter (beim Öffnen „Inhalt aktivieren“ bzw. Daten → Links bearbeiten → '
+                '„Werte aktualisieren“). Gelbe Kampagnen-Felder trägst du selbst ein. Grau = an dem Tag nicht da. '
+                'Mitarbeiterwechsel: auch hier Daten → Links bearbeiten → „Quelle ändern“.')
     ue['A2'].alignment = Alignment(wrap_text=True, vertical='top'); ue.merge_cells('A2:F2'); ue.row_dimensions[2].height = 60
     ue.column_dimensions['A'].width = 34
     for i, d in enumerate(tage):
@@ -317,7 +290,7 @@ def tagesplan(ordner, N, n_tage):
         ws['A1'] = d; ws['A1'].number_format = DATUM_LANG
         ws['A1'].font = Font(bold=True, size=14, color='FFFFFFFF'); ws['A1'].fill = kopf_fill; ws['A1'].alignment = mitte
         ws.merge_cells('A1:J1'); ws.row_dimensions[1].height = 26
-        ws['L1'] = '=MATCH(A1,TPDatum,0)'                     # Zeile im Datenblatt (versteckt)
+        ws['L1'] = '=MATCH(A1,SPDatum,0)'                     # Zeile im Datenblatt (versteckt)
         for j, h in enumerate(['Nr.', 'MA\n(Vorname)', 'MA\n(Nachname)', 'Arbeits-\nbeginn', 'geplante\nPause in\nMinuten',
                                'Anm.', 'Kampagne 1\n(11:00 - 13:00)', 'Kampagne 2\n(13:00 - 15:00)',
                                'Kampagne 3\n(15:00 - 17:00)', 'Kampagne 4\n(17:00 - 19:00)']):
@@ -325,14 +298,14 @@ def tagesplan(ordner, N, n_tage):
         ws.row_dimensions[2].height = 45
         for p in range(1, N + 1):
             r = 2 + p; mr = 3 + p
-            ws[f'L{r}'] = f'=Mitarbeiter!B{mr}'               # Platz-Nr.
-            ws[f'M{r}'] = f'=IF(C{r}="","",IFERROR(INDEX(TPWerte,$L$1,(L{r}-1)*3+1),""))'   # Beginn/Status roh
-            ws[f'N{r}'] = f'=IF(C{r}="","",IFERROR(INDEX(TPWerte,$L$1,(L{r}-1)*3+3),""))'   # Anmerkung roh
+            ws[f'L{r}'] = f'=Mitarbeiter!I{mr}'               # Platz-Nr.
+            ws[f'M{r}'] = f'=IF(C{r}="","",IFERROR(INDEX(SPWerte,$L$1,(L{r}-1)*3+1),""))'   # Beginn/Status roh
+            ws[f'N{r}'] = f'=IF(C{r}="","",IFERROR(INDEX(SPWerte,$L$1,(L{r}-1)*3+3),""))'   # Anmerkung roh
             ws[f'A{r}'] = f'{p}.'
-            ws[f'B{r}'] = f'=Mitarbeiter!C{mr}'
-            ws[f'C{r}'] = f'=Mitarbeiter!D{mr}'
+            ws[f'B{r}'] = f'=Mitarbeiter!K{mr}'
+            ws[f'C{r}'] = f'=Mitarbeiter!L{mr}'
             ws[f'D{r}'] = f'=IF(ISNUMBER(M{r}),IF(M{r}=0,"",M{r}),"")'
-            ws[f'E{r}'] = f'=IF(ISNUMBER(M{r}),IFERROR(INDEX(TPWerte,$L$1,(L{r}-1)*3+2),""),"")'
+            ws[f'E{r}'] = f'=IF(ISNUMBER(M{r}),IFERROR(INDEX(SPWerte,$L$1,(L{r}-1)*3+2),""),"")'
             ws[f'F{r}'] = (f'=IF(C{r}="","",IF(ISNUMBER(M{r}),IF(N{r}="Homeoffice","HO",IF(N{r}=0,"",N{r})),'
                            f'IF(OR(M{r}="",M{r}=0),"",M{r})))')
             ws[f'D{r}'].number_format = 'hh:mm'
@@ -370,5 +343,5 @@ if __name__ == '__main__':
     namen = list(a.mitarbeiter) + [f'Mustermann, Max {i:02d}' for i in range(len(a.mitarbeiter) + 1, a.plaetze + 1)]
     mitarbeiter_dateien(a.ordner, namen, a.beispieldaten)
     schichtplan(a.ordner, namen, a.wochen)
-    tagesplan(a.ordner, len(namen), a.tage)
+    tagesplan(a.ordner, namen, a.tage)
     print('Erzeugt in', a.ordner, ':', len(namen), 'Eingabe-Dateien + Stundenzettel, Schichtplan.xlsx, MA-Tagesplan.xlsx')
