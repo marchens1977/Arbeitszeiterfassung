@@ -18,7 +18,7 @@ Die App ist als installierbare App (PWA) eingerichtet und läuft auch offline.
 | `manifest.json` | Beschreibung für die Installation als App (Name, Symbol, Farben) |
 | `sw.js` | Offline-Helfer (Service Worker): speichert die App-Dateien; „Netz zuerst, sonst Kopie“ |
 | `icons/` | App-Symbol (blaue Uhr) als SVG und PNG (192, 512, 512 maskable, 180 Apple) |
-| `excel/Arbeitszeiterfassung.xlsx` | Excel-Version der App (eigenständig, siehe Abschnitt 9) |
+| `excel/Arbeitszeiterfassung.xlsx` | Excel-Version der App (eigenständig, siehe Abschnitt 9) – zugleich Vorlage für jede Mitarbeiter-Datei |
 | `werkzeuge/` | Automatische Prüfungen (Tests) und Hilfsprogramme, siehe Abschnitt 8 |
 | `CLAUDE.md` | Dieses Tagebuch |
 
@@ -98,13 +98,16 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | App: dieselbe Logik wie Excel – Ausscheiden unter dem Jahr (Monate mit Jahres-Basis 0 = „kein Vertrag“, grau), anteiliger Urlaub gesetzlich gerundet, Hinweis unter „Urlaubsanspruch volles Jahr“, Urlaubs-Karten grün/rot; `sw.js` v5; neuer Test `ausscheiden.test.js` (vergleicht mit den Excel-Werten) | #12 |
 | 2026-11-27 | Grundregel ins Tagebuch: Excel-Datei ist Vorlage, App zieht Logik und Aussehen exakt gleich nach; keine Synchronisation; Liste der noch offenen Unterschiede | #13 |
 | 2026-11-27 | App an Excel angeglichen: Uhrzeit-Auswahl (Dateneingabe + Musterwoche) nur 11:00–17:00 (alte gespeicherte Zeiten bleiben erhalten); Mitarbeitername (Feld „Mitarbeiter (Nachname, Vorname)“, Überschrift „1. Stammdaten – Name“, blaues Feld mit orangem Rand, Hinweis ohne Komma, in der Sicherung); Excel-Farben: Eingabe gelb/orange, gesperrt/berechnet grau, Urlaub hellblau, Feiertag dunkelrot, Legende; Überschriften/Reiter wie in Excel („5. Auswertung“); `sw.js` v6; neuer Test `name-und-aussehen.test.js` | #14 |
+| 2026-11-27 | Excel: Spalte „Anmerkung“ (Dateneingabe F = Eingabe, I = gilt; Musterwoche D) mit Büro/Homeoffice/Teammentor*in/krank; „krank“ = geplante Zeit wird gutgeschrieben (Rechnung unverändert); verstecktes Blatt „Export“ für den Schichtplan. Neu: Schichtplan + MA-Tagesplan ohne Makros (Abschnitt 10), Mini-Paket zum Test bei der Naspa; Werkzeuge `xlsx_spalten.py`, `plaene-erzeugen.py`, `plaene.test.py` | #15 |
 
 ## 4. Offene Ideen / nächste Schritte
 
 - Vorbelegter Urlaub: Der 26.03.2027 (Karfreitag) war als Urlaub eingetragen und zählt nicht; dadurch sind nur
   29 statt 30 Tage vorbelegt. Nutzer kann einen Tag nachtragen – oder die Vorbelegung wird angepasst.
 - Vorbereitung auf ein neues Jahr (2028): Jahr umstellen, vorbelegten Urlaub pflegen, ggf. Übernahme des Übertrags.
-- **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2): zurzeit nichts (Stand #14).
+- **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2):
+  - Spalte „Anmerkung“ (Büro/Homeoffice/Teammentor*in/krank) in Dateneingabe und Musterwoche (seit #15 in Excel). Nutzer fragen.
+- Schichtplan/Tagesplan: nach erfolgreichem Mini-Test bei der Naspa das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
   Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
   Excel hat zusätzlich das Blatt „Anleitung“, die App erklärt in kurzen Hinweistexten.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
@@ -151,6 +154,9 @@ Vorhandene Werkzeuge (benötigen Node.js und Playwright mit Chromium; in der Cla
 | `node werkzeuge/name-und-aussehen.test.js` | Angleichung an Excel: Mitarbeitername (Hinweis ohne Komma, große Anzeige, bleibt nach Neuladen, steckt in der Sicherung), Farben gelb/grau/hellblau, Uhrzeiten 11:00–17:00, Reiter-/Überschriften; macht Handy-Screenshots. Endet mit „ERGEBNIS: alles in Ordnung“. |
 | `node werkzeuge/offline-app.test.js` | Startet einen lokalen Webserver und prüft Manifest, Symbole, Offline-Helfer und den Start ohne Internet |
 | `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT] [--anspruch TAGE] [--ab-monat N] [--urlaub K]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. `--ab-monat 7` = Ausscheiden ab Juli (Erwartung bei 30 Tagen: 15 Tage, 117:00:00), `--urlaub 15` trägt 15 Urlaubstage im Januar ein. |
+| `python3 werkzeuge/plaene.test.py` | Schicht- und Tagesplan: erzeugt ein Mini-Paket, speichert die Mitarbeiter-Dateien mit LibreOffice, setzt die gespeicherten Werte wie Excels „Werte aktualisieren“ ein und prüft Namen, Sortierung, Zeiten, Urlaub, „abwesend“ (krank), Teammentor*in, frei, HO, Platzhalter. Endet mit „ERGEBNIS: alles in Ordnung“ (dauert ca. 1–2 Min). |
+| `python3 werkzeuge/plaene-erzeugen.py --ordner ORDNER [...]` | Kein Test: erzeugt Mitarbeiter-Dateien, `Schichtplan.xlsx`, `MA-Tagesplan.xlsx` (Optionen siehe Kopf der Datei; Mini-Paket: `--plaetze 3 --wochen 1 --tage 5 --mitarbeiter "Beispiel, Anna" "Test, Ben" --beispieldaten`) |
+| `werkzeuge/xlsx_spalten.py` | Kein Test: Hilfsfunktion `spalten_einfuegen(wb, blatt, idx)` – fügt Spalten ein und zieht alle Bezüge (Formeln, Namen, Formatierung, Prüfungen, Verbindungen) mit; danach immer `excel-pruefen.py` alt/neu vergleichen |
 | `node werkzeuge/symbole-erzeugen.js` | Kein Test: erzeugt aus `icons/icon.svg` alle PNG-Symbole neu (nur nach Änderung am Symbol) |
 
 Ergebnis lesen: Die Prüfungen geben ihre Ergebnisse als Text aus und brechen nicht von selbst mit „Fehlgeschlagen“ ab.
@@ -213,6 +219,13 @@ Wichtig:
   `CELL("filename")` funktioniert in Excel am PC und in LibreOffice, laut Microsoft **nicht** in Excel im Browser/auf dem Handy
   und nicht in Google Tabellen – dann bleibt B3 leer und D3 zeigt „Name nicht lesbar“. Eine neue, nie gespeicherte Datei hat noch keinen Namen.
 - Blätter sind **ohne Passwort** geschützt (nur gegen versehentliches Löschen von Formeln), keine Makros.
+- **Anmerkung** (seit #15): Dateneingabe F = Eingabe (Klappmenü `ListeAnmTag`: Büro, Homeoffice, Teammentor*in, krank),
+  I = gilt (Eingabe, sonst Musterwoche D über `MusterAnm`; nur an Arbeitstagen). Musterwoche D (`ListeAnmMuster`: Büro, Homeoffice,
+  Teammentor*in). „krank“: Beginn/Pause bleiben wie geplant und werden gutgeschrieben – die Rechnung ändert sich nicht.
+  Spalten wurden mit `xlsx_spalten.py` eingefügt: Dateneingabe G = Gilt Start, H = Gilt Pause, J = Netto, K–M versteckte Helfer.
+- **Blatt „Export“** (versteckt, geschützt): Quelle für den Schichtplan. B1 = Name (direkt `=Stammdaten!$B$3`, KEIN Namensbezug –
+  LibreOffice verwechselt Namen zwischen verknüpften Dateien), D1 = aktiv (0 bei leer/„Mustermann, Max…“), Zeilen 4–265 = Werktag 1–262
+  (A Datum, B Beginn oder Urlaub/Feiertag/Frei/„abwesend“, C Pause, D Anmerkung ohne „krank“). Name: `%2C` wird zu „,“ dekodiert.
 - Für ein neues Jahr: Kopie speichern, Jahr in „Stammdaten“ ändern, alte Eingaben löschen.
 - Bei Änderungen an der Datei: mit `openpyxl` (Python) bearbeiten, danach die Formeln mit LibreOffice neu berechnen lassen
   und die Ergebnisse mit der App vergleichen (gleiche Eingaben → gleiche Zahlen).
@@ -227,4 +240,44 @@ Tests für den Nutzer (Excel):
 - [ ] Excel am PC: Datei als „Mustermann, Max.xlsx“ speichern, neu öffnen → Stammdaten zeigt oben „1. Stammdaten – Mustermann, Max“ und das blaue Feld „Mitarbeiter“.
 - [ ] Ausscheiden: Jahres-Basis Juli–Dezember auf `0:00` → Stammdaten zeigt „Anteilig 6 von 12 Monaten: 15 Tage“, Urlaub 15 Tage / 117:00:00, Juli–Dezember in der Dateneingabe grau „kein Vertrag“.
 - [ ] Urlaubsblatt: Block oben rot, solange genommener ≠ zustehender Urlaub; grün, wenn genau gleich.
+- [ ] Anmerkung: Musterwoche Freitag „Homeoffice“ → in der Dateneingabe steht freitags „Homeoffice“ (gelb); einzelner Tag „Büro“ hebt es auf; „krank“ ändert die Stunden nicht.
 - [ ] Gleiche Eingaben wie in der App → gleiche Jahresbilanz (stichprobenartig vergleichen).
+
+## 10. Schichtplan und MA-Tagesplan (Excel, ohne Makros)
+
+Wunsch des Nutzers (27.11.2026): Steuerer sieht automatisch, wer wann da ist. Vorlagen kamen per Mail
+(„Schichtplan.xlsx“ mit Wochenblatt „04.01.2027“, „MA-Tagesplan.xlsx“ mit Kampagnen-Spalten).
+**Makros sind bei der Naspa nicht erlaubt** → nur Excel-Verknüpfungen (Daten → Links bearbeiten → Werte aktualisieren).
+
+Entscheidungen des Nutzers:
+- Alle Dateien in EINEM Ordner (Abteilungsordner); Mitarbeiter dürfen alles ansehen.
+- Mitarbeiter-Dateien heißen „Nachname, Vorname.xlsx“ (Name kommt aus dem Dateinamen). Bei Wechsel: Datei umbenennen
+  und NUR im Schichtplan die Verknüpfung umstellen (Links bearbeiten → Quelle ändern). Der Tagesplan holt alles aus dem Schichtplan.
+- 35 Plätze; freie Plätze sind Platzhalter-Dateien „Mustermann, Max NN.xlsx“ (werden nicht angezeigt).
+- Tagesplan: ALLE Mitarbeiter fest nach Nachname sortiert; wer nicht da ist, ist ausgegraut (Grund steht in „Anm.“).
+  So verrutschen die handschriftlichen Kampagnen-Einträge nicht. (Achtung: Ändert sich die Mitarbeiterliste, ändert sich die Sortierung
+  auf allen Tagesblättern – dann Kampagnen-Einträge prüfen.)
+- Krank: im Schicht-/Tagesplan nur „abwesend“ (Grund darf nicht kommuniziert werden). Urlaub/Feiertag werden angezeigt (grün).
+- Anmerkungen: Homeoffice (gelb, im Tagesplan „HO“), Teammentor*in (hellblau).
+- Schutz: „Kennwort zum Ändern“ (nicht „Kennwort zum Öffnen“ – das verschlüsselt und bricht die Verknüpfung). Bester Schutz: Ordnerrechte der IT.
+
+Aufbau:
+- `Schichtplan.xlsx`: Anleitung · Mitarbeiter (Plätze, Name, aktiv, Sortierung nach Nachname) · ein Blatt je Woche („04.01.2027“ …, 52 Wochen) ·
+  versteckt „Daten“ (je Platz 3 Spalten Beginn/Pause/Anm, Zeilen 4–265 = Werktag; Zeile 1 Name, Zeile 2 aktiv; je Platz eine Verknüpfung
+  auf `Export` der Mitarbeiter-Datei).
+- `MA-Tagesplan.xlsx`: Übersicht (Links zu jedem Tag) · ein Blatt je Arbeitstag ohne Feiertage · versteckt „Daten“ und „Mitarbeiter“
+  (eine einzige Verknüpfung auf `Schichtplan.xlsx`). Kampagnen-Felder gelb und entsperrt, Rest gesperrt (ohne Passwort).
+- Verknüpfungen werden von `plaene-erzeugen.py` als echte Excel-Verknüpfungen (externalLink, relativer Pfad) geschrieben und enthalten
+  NUR einfache Bezüge `=[n]Blatt!A1` (keine WENN drumherum) – Bereinigung passiert lokal.
+- Excel liest bei geschlossenen Dateien die **gespeicherten** Werte: Mitarbeiter müssen ihre Datei speichern; der Steuerer muss den
+  Schichtplan nach dem Aktualisieren speichern, bevor der Tagesplan aktualisiert wird. Neue (von Claude erzeugte) Dateien haben noch keine
+  gespeicherten Werte → einmal in Excel öffnen und speichern.
+
+Test bei der Naspa (Mini-Paket: „Beispiel, Anna.xlsx“, „Test, Ben.xlsx“, „Mustermann, Max 03.xlsx“, Schichtplan 1 Woche, Tagesplan 5 Tage):
+- [ ] Alle 5 Dateien in einen neuen Ordner auf dem Firmenlaufwerk legen.
+- [ ] Anna und Ben je einmal öffnen und speichern (Stammdaten zeigt den Namen).
+- [ ] Schichtplan öffnen → „Inhalt aktivieren“ bzw. Daten → Links bearbeiten → Werte aktualisieren → Werte erscheinen
+  (Anna Mo 11:00 Homeoffice gelb, Di Urlaub grün; Ben Mi „abwesend“ grau, Do Teammentor*in, Fr Frei) → speichern.
+- [ ] MA-Tagesplan öffnen → aktualisieren → 05.01.: Anna grau „Urlaub“, Ben 13:00; Kampagnen-Feld eintragbar.
+- [ ] Ben in der Datei auf „Urlaub“ am 04.01. setzen, speichern → Schichtplan aktualisieren, speichern → Tagesplan aktualisieren → Ben grau.
+- [ ] „Kennwort zum Ändern“ an einer Datei setzen → Schichtplan aktualisiert trotzdem.
