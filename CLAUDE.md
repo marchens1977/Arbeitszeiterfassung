@@ -66,6 +66,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-19 | Automatische App-Updates: Kasten „App-Updates“ im Reiter Stammdaten (Version, letzte Suche, Knopf „Jetzt nach Updates suchen“); sucht beim Start, beim Zurückkehren und stündlich, installiert selbst, wartet während einer Bearbeitung; Test `updates.test.js`; Sicherungs-Test wartet jetzt auf das Kopieren | #8 |
 | 2026-11-27 | Excel-Version `excel/Arbeitszeiterfassung.xlsx` ins Projekt übernommen und im Tagebuch beschrieben (Abschnitt 9) | #9 |
 | 2026-11-27 | Excel: Komma hinter ganzen Zahlen entfernt (Format `0.##` → `General`), Jahres-Basis jetzt als Zeit `[hh]:mm:ss` (Eingabe `2028:00`); Prüfprogramm `werkzeuge/excel-pruefen.py` | #10 |
+| 2026-11-27 | Excel: Klappmenü „Start / Status“ in der Dateneingabe nur noch 11:00–17:00 (15-Minuten-Takt; Liste `ListeTag` = `Listen!A2:A29`); Musterwoche unverändert | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -146,7 +147,7 @@ Aufbau (Blätter):
 | Anleitung | Bedienung, Farben (Gelb = eintragen, Grau = rechnet Excel), Rechenregeln, Sichern, neues Jahr |
 | Stammdaten | Jahr (2027), Urlaubsanspruch, Übertrag (Plus/Minus), vereinbarte Überstunden, unbezahlter Urlaub, Jahres-Basis je Monat |
 | Musterwoche | Mo–Fr Start/„Frei“ und Pause, Ende fix 19:00 |
-| Dateneingabe | alle Werktage des Jahres, hessische Feiertage vorbelegt, Klappmenü für Start/Urlaub/Feiertag/Frei |
+| Dateneingabe | alle Werktage des Jahres, hessische Feiertage vorbelegt, Klappmenü für Urlaub/Feiertag/Frei und Arbeitsbeginn 11:00–17:00 (15-Min.-Takt) |
 | Urlaub | Anspruch, genommen, Rest, je Monat; Warnung bei zu viel Urlaub |
 | Auswertung | Monatswerte Plan, Eingabe „Stundenabrechnung 057“, Soll/Ist/Differenz |
 | Listen | Hilfsblatt: Klappmenü-Werte, Osterberechnung (Gauß), Feiertage |
@@ -167,4 +168,5 @@ Tests für den Nutzer (Excel):
 - [ ] Datei über den Download-Link am Handy öffnen (z. B. Excel-App oder Google Tabellen).
 - [ ] In der Musterwoche einen Wert ändern → Dateneingabe und Auswertung ändern sich mit.
 - [ ] Stammdaten: Urlaubsanspruch ohne Komma, Jahres-Basis als `2028:00:00`; Eingabe `2028:00` wird angenommen, `2028` abgewiesen.
+- [ ] Dateneingabe: Klappmenü „Start / Status“ zeigt Urlaub, Feiertag, Frei und 11:00 bis 17:00.
 - [ ] Gleiche Eingaben wie in der App → gleiche Jahresbilanz (stichprobenartig vergleichen).
