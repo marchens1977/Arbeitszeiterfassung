@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Prüft Schichtplan und MA-Tagesplan (Kette ohne Makros) mit LibreOffice.
 
-Ablauf (bildet Excel nach):
+Ablauf (bildet Excel nach), Ordner „Schichtplanung“ (offen) und „Steuerung“ (privat):
   1. Mini-Paket erzeugen (3 Plätze: „Beispiel, Anna“ und „Test, Ben“ mit Testwerten, 1 Platzhalter)
-  2. Mitarbeiter-Dateien öffnen, rechnen, speichern (wie ein Mitarbeiter in Excel)
+  2. Eingabe-Dateien öffnen, rechnen, speichern (wie ein Mitarbeiter in Excel); Urlaubswarnung prüfen
   3. „Werte aktualisieren“ wie Excel: Excel liest bei geschlossenen Dateien die GESPEICHERTEN Werte.
-     Der Test setzt genau diese Werte in den Schichtplan ein, rechnet ihn mit LibreOffice und speichert ihn.
-  4. Dasselbe für den MA-Tagesplan mit den gespeicherten Werten des Schichtplans.
+     Stundenzettel aktualisieren → muss genauso rechnen wie die Hauptvorlage mit denselben Eingaben → speichern
+  4. Schichtplan aktualisieren (Eingabe-Dateien + Vertrag aus den Stundenzetteln) → prüfen → speichern
+  5. MA-Tagesplan aktualisieren (aus dem gespeicherten Schichtplan) → prüfen
+  6. Vertragsende: Ben ohne Vertrag im Januar → Schichtplan zeigt Ben im Januar ohne Zeiten
 Warum nicht die echte Verknüpfung in LibreOffice? LibreOffice rechnet verknüpfte Dateien beim Aktualisieren
 neu, verwechselt dabei Werte zwischen mehreren Dateien und stürzt teils ab – Excel liest nur gespeicherte Werte.
 Dass die Verknüpfung grundsätzlich funktioniert (relativer Pfad, gleicher Ordner), wurde einmalig von Hand geprüft;
@@ -51,6 +53,7 @@ for _ in range(120):
     except Exception:
         time.sleep(0.5)
 desk = ctx.ServiceManager.createInstanceWithContext('com.sun.star.frame.Desktop', ctx)
+OFFEN, PRIVAT = 'Schichtplanung', 'Steuerung'
 pfad = lambda n: os.path.join(ORDNER, n)
 
 
@@ -81,8 +84,10 @@ EXT = re.compile(r"^=\[(\d+)\]([A-Za-z]+)!\$?([A-Z]+)\$?(\d+)$")
 def aktualisieren_wie_excel(datei):
     """Ersetzt Verknüpfungsformeln =[n]Blatt!Zelle durch die gespeicherten Werte der Quelldatei n."""
     wb = openpyxl.load_workbook(pfad(datei))
-    ziele = [lk.file_link.Target.replace('%20', ' ').replace('%2C', ',') for lk in wb._external_links]
-    cache = {i + 1: openpyxl.load_workbook(pfad(z), data_only=True) for i, z in enumerate(ziele)}
+    from urllib.parse import unquote
+    basis = os.path.dirname(pfad(datei))
+    ziele = [os.path.normpath(os.path.join(basis, unquote(lk.file_link.Target))) for lk in wb._external_links]
+    cache = {i + 1: openpyxl.load_workbook(z, data_only=True) for i, z in enumerate(ziele)}
     for ws in wb.worksheets:
         for row in ws.iter_rows():
             for c in row:
@@ -95,17 +100,53 @@ def aktualisieren_wie_excel(datei):
     wb.save(pfad(datei))
 
 
-# 2. Mitarbeiter-Dateien „in Excel“ speichern (ZELLE("Dateiname") wie in Excel fest eingesetzt)
+# 2. Eingabe-Dateien „in Excel“ speichern (ZELLE("Dateiname") wie in Excel fest eingesetzt)
 for n in MA:
-    d = oeffnen(n + '.xlsx')
-    d.Sheets.getByName('Stammdaten').getCellRangeByName('G3').setString('C:\\Abteilung\\[' + n + '.xlsx]Stammdaten')
+    d = oeffnen(f'{OFFEN}/{n}.xlsx')
+    d.Sheets.getByName('Start').getCellRangeByName('G3').setString('C:\\Abteilung\\[' + n + '.xlsx]Start')
     d.calculateAll()
     pruefe(f'{n}: Name im Export', wert(d, 'Export', 'B1'), n)
-    speichern(d, n + '.xlsx'); d.close(True)
+    if n == MA[0]:
+        pruefe('Eingabe: keine Vertragsblätter', ','.join(d.Sheets.ElementNames), 'Anleitung,Start,Musterwoche,Dateneingabe,Urlaub,Listen,Export')
+        d.Sheets.getByName('Start').getCellRangeByName('B5').setValue(0); d.calculateAll()
+        pruefe('Eingabe: Urlaubswarnung', wert(d, 'Dateneingabe', 'A4'), 'Achtung: 1 Urlaubstage eingetragen – Anspruch: 0 Tage!')
+        d.Sheets.getByName('Start').getCellRangeByName('B5').setValue(30); d.calculateAll()
+        pruefe('Eingabe: keine Warnung bei 30', wert(d, 'Dateneingabe', 'A4'), '')
+        pruefe('Eingabe: Urlaub Rest', wert(d, 'Urlaub', 'B6'), '29 Tage')
+    speichern(d, f'{OFFEN}/{n}.xlsx'); d.close(True)
 
-# 3. Schichtplan aktualisieren wie Excel
-aktualisieren_wie_excel('Schichtplan.xlsx')
-sp = oeffnen('Schichtplan.xlsx'); sp.calculateAll()
+# Sollwerte: Hauptvorlage mit denselben Eingaben wie Ben
+ref = os.path.join(TMP, 'referenz.xlsx')
+wbr = openpyxl.load_workbook(os.path.join(HIER, '..', 'excel', 'Arbeitszeiterfassung.xlsx'))
+import datetime as _dt
+for r in range(5, 10): wbr['Musterwoche'][f'B{r}'] = _dt.time(13, 0); wbr['Musterwoche'][f'C{r}'] = 45
+wbr['Dateneingabe']['F9'] = 'abwesend (Gutschrift)'; wbr['Dateneingabe']['F10'] = 'Teammentor*in'; wbr['Dateneingabe']['D11'] = 'Frei'
+wbr.save(ref)
+rd = desk.loadComponentFromURL(uno.systemPathToFileUrl(ref), '_blank', 0, (pv('Hidden', True),)); rd.calculateAll()
+soll = {z: wert(rd, *z.split('!')) for z in ('Auswertung!C26', 'Auswertung!C27', 'Auswertung!C28', 'Urlaub!B4', 'Auswertung!B5', 'Stammdaten!B27')}
+rd.close(True)
+
+# 3. Stundenzettel aktualisieren wie Excel
+print('--- Stundenzettel')
+for n in MA:
+    aktualisieren_wie_excel(f'{PRIVAT}/Stundenzettel {n}.xlsx')
+sz = oeffnen(f'{PRIVAT}/Stundenzettel {MA[1]}.xlsx'); sz.calculateAll()
+pruefe('Name aus der Eingabe-Datei', wert(sz, 'Stammdaten', 'B3'), 'Test, Ben')
+pruefe('Tagesliste 04.01. Beginn', wert(sz, 'Tagesliste', 'G7'), '13:00')
+pruefe('Tagesliste 06.01. abwesend, Zeit bleibt', wert(sz, 'Tagesliste', 'G9') + ' / ' + wert(sz, 'Tagesliste', 'I9'), '13:00 / abwesend (Gutschrift)')
+pruefe('Tagesliste 08.01. Frei', wert(sz, 'Tagesliste', 'G11'), 'Frei')
+for z, v in soll.items():
+    pruefe(f'wie Hauptvorlage {z}', wert(sz, *z.split('!')), v)
+pruefe('Urlaub: Anspruch Eingabe = Stammdaten (keine Warnung)', wert(sz, 'Urlaub', 'C28'), '')
+pruefe('Vertrag-Merker Januar', wert(sz, 'Vertrag', 'A1'), '1')
+speichern(sz, f'{PRIVAT}/Stundenzettel {MA[1]}.xlsx'); sz.close(True)
+for n in (MA[0], MA[2]):
+    d = oeffnen(f'{PRIVAT}/Stundenzettel {n}.xlsx'); d.calculateAll(); speichern(d, f'{PRIVAT}/Stundenzettel {n}.xlsx'); d.close(True)
+
+# 4. Schichtplan aktualisieren wie Excel
+shutil.copy(pfad(f'{OFFEN}/Schichtplan.xlsx'), os.path.join(TMP, 'Schichtplan-original.xlsx'))
+aktualisieren_wie_excel(f'{OFFEN}/Schichtplan.xlsx')
+sp = oeffnen(f'{OFFEN}/Schichtplan.xlsx'); sp.calculateAll()
 W = '04.01.2027'
 print('--- Schichtplan, Woche', W)
 pruefe('Zeile 1 Name', wert(sp, W, 'A4'), 'Beispiel, Anna')
@@ -121,16 +162,16 @@ pruefe('Anna Di Anmerkung leer', wert(sp, W, 'G4'), '')
 pruefe('Anna Fr Beginn', wert(sp, W, 'N4'), '12:00')
 pruefe('Ben Mo Beginn', wert(sp, W, 'B5'), '13:00')
 pruefe('Ben Mo Pause', wert(sp, W, 'C5'), '45')
-pruefe('Ben Mi krank → abwesend', wert(sp, W, 'H5'), 'abwesend')
-pruefe('Ben Mi keine Anmerkung (kein „krank“)', wert(sp, W, 'J5'), '')
+pruefe('Ben Mi abwesend (Gutschrift) → abwesend', wert(sp, W, 'H5'), 'abwesend')
+pruefe('Ben Mi keine Anmerkung (kein Grund)', wert(sp, W, 'J5'), '')
 pruefe('Ben Do Teammentor*in', wert(sp, W, 'M5'), 'Teammentor*in')
 pruefe('Ben Fr frei', wert(sp, W, 'N5'), 'Frei')
 pruefe('Datum Kopf', wert(sp, W, 'B2')[:6], 'Montag')
-speichern(sp, 'Schichtplan.xlsx'); sp.close(True)
+speichern(sp, f'{OFFEN}/Schichtplan.xlsx'); sp.close(True)
 
-# 4. Tagesplan aktualisieren wie Excel (Quelle: gespeicherter Schichtplan)
-aktualisieren_wie_excel('MA-Tagesplan.xlsx')
-tp = oeffnen('MA-Tagesplan.xlsx'); tp.calculateAll()
+# 5. Tagesplan aktualisieren wie Excel (Quelle: gespeicherter Schichtplan)
+aktualisieren_wie_excel(f'{OFFEN}/MA-Tagesplan.xlsx')
+tp = oeffnen(f'{OFFEN}/MA-Tagesplan.xlsx'); tp.calculateAll()
 print('--- MA-Tagesplan')
 T = lambda d, z: wert(tp, d, z)
 pruefe('04.01. Zeile 1 Vorname', T('04.01.2027', 'B3'), 'Anna')
@@ -152,9 +193,27 @@ if os.environ.get('BILDER'):
     tp.storeToURL(uno.systemPathToFileUrl(os.path.join(os.environ['BILDER'], 'tagesplan.pdf')), (pv('FilterName', 'calc_pdf_Export'),))
 tp.close(True)
 if os.environ.get('BILDER'):
-    sp = oeffnen('Schichtplan.xlsx')
-    sp.storeToURL(uno.systemPathToFileUrl(os.path.join(os.environ['BILDER'], 'schichtplan.pdf')), (pv('FilterName', 'calc_pdf_Export'),))
-    sp.close(True)
+    for datei, name in ((f'{OFFEN}/Schichtplan.xlsx', 'schichtplan'), (f'{PRIVAT}/Stundenzettel {MA[1]}.xlsx', 'stundenzettel'),
+                        (f'{OFFEN}/{MA[1]}.xlsx', 'eingabe')):
+        x = oeffnen(datei)
+        x.storeToURL(uno.systemPathToFileUrl(os.path.join(os.environ['BILDER'], name + '.pdf')), (pv('FilterName', 'calc_pdf_Export'),))
+        x.close(True)
+
+# 6. Vertragsende: Ben hat im Januar keinen Vertrag → Schichtplan zeigt Ben im Januar ohne Zeiten
+print('--- Vertragsende')
+sz = oeffnen(f'{PRIVAT}/Stundenzettel {MA[1]}.xlsx')
+sz.Sheets.getByName('Stammdaten').getCellRangeByName('B14').setValue(2028 / 24)
+sz.Sheets.getByName('Stammdaten').getCellRangeByName('B13').setValue(0); sz.calculateAll()
+pruefe('Merker Januar = 0', wert(sz, 'Vertrag', 'A1'), '0')
+speichern(sz, f'{PRIVAT}/Stundenzettel {MA[1]}.xlsx'); sz.close(True)
+shutil.copy(os.path.join(TMP, 'Schichtplan-original.xlsx'), pfad(f'{OFFEN}/Schichtplan.xlsx'))
+aktualisieren_wie_excel(f'{OFFEN}/Schichtplan.xlsx')
+sp = oeffnen(f'{OFFEN}/Schichtplan.xlsx'); sp.calculateAll()
+pruefe('Ben steht noch in der Liste', wert(sp, W, 'A5'), 'Test, Ben')
+pruefe('Ben Mo ohne Zeit (kein Vertrag)', wert(sp, W, 'B5'), '')
+pruefe('Ben Do ohne Anmerkung (kein Vertrag)', wert(sp, W, 'M5'), '')
+pruefe('Anna unverändert', wert(sp, W, 'B4'), '11:00')
+sp.close(True)
 try:
     desk.terminate()
 except Exception:

@@ -103,3 +103,24 @@ def spalten_einfuegen(wb, blatt, idx, n=1):
 def stil_kopieren(ziel, quelle):
     for a in ("font", "fill", "border", "alignment", "number_format", "protection"):
         setattr(ziel, a, copy(getattr(quelle, a)))
+
+
+def blatt_umbenennen(wb, alt, neu):
+    """Benennt ein Blatt um und ersetzt alle Bezüge darauf (Formeln, Namen, Gültigkeitsprüfungen, bedingte Formatierung)."""
+    import re
+    muster = re.compile(r"(?<![A-Za-z0-9_.])'?" + re.escape(alt) + r"'?!")
+    ziel = (f"'{neu}'!" if re.search(r"[^A-Za-z0-9_]", neu) else f"{neu}!")
+    ers = lambda s: muster.sub(ziel, s) if isinstance(s, str) else s
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for c in row:
+                if isinstance(c.value, str) and c.value.startswith('='):
+                    c.value = ers(c.value)
+        for dv in ws.data_validations.dataValidation:
+            dv.formula1 = ers(dv.formula1); dv.formula2 = ers(dv.formula2)
+        for cf in ws.conditional_formatting:
+            for r in cf.rules:
+                r.formula = [ers(f) for f in (r.formula or [])]
+    for n, dn in wb.defined_names.items():
+        dn.attr_text = ers(dn.attr_text)
+    wb[alt].title = neu

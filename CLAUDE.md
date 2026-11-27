@@ -18,7 +18,8 @@ Die App ist als installierbare App (PWA) eingerichtet und läuft auch offline.
 | `manifest.json` | Beschreibung für die Installation als App (Name, Symbol, Farben) |
 | `sw.js` | Offline-Helfer (Service Worker): speichert die App-Dateien; „Netz zuerst, sonst Kopie“ |
 | `icons/` | App-Symbol (blaue Uhr) als SVG und PNG (192, 512, 512 maskable, 180 Apple) |
-| `excel/Arbeitszeiterfassung.xlsx` | Excel-Version der App (eigenständig, siehe Abschnitt 9) – zugleich Vorlage für jede Mitarbeiter-Datei |
+| `excel/Arbeitszeiterfassung.xlsx` | Excel-Version der App (eigenständig, siehe Abschnitt 9) – **Hauptvorlage**, aus der die beiden Vorlagen unten gebaut werden |
+| `excel/vorlagen/Eingabe.xlsx`, `excel/vorlagen/Stundenzettel-Vorlage.xlsx` | Abgeleitete Vorlagen (NICHT von Hand ändern – `werkzeuge/vorlagen-bauen.py`); die Stundenzettel-Vorlage enthält Platzhalter-Verknüpfungen `[1]Export!…` und ist allein nicht benutzbar |
 | `werkzeuge/` | Automatische Prüfungen (Tests) und Hilfsprogramme, siehe Abschnitt 8 |
 | `CLAUDE.md` | Dieses Tagebuch |
 
@@ -101,6 +102,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Excel: Spalte „Anmerkung“ (Dateneingabe F = Eingabe, I = gilt; Musterwoche D) mit Büro/Homeoffice/Teammentor*in/krank; „krank“ = geplante Zeit wird gutgeschrieben (Rechnung unverändert); verstecktes Blatt „Export“ für den Schichtplan. Neu: Schichtplan + MA-Tagesplan ohne Makros (Abschnitt 10), Mini-Paket zum Test beim Arbeitgeber; Werkzeuge `xlsx_spalten.py`, `plaene-erzeugen.py`, `plaene.test.py` | #15 |
 | 2026-11-27 | Nach Test des Nutzers (Excel): Eingabefelder der Dateneingabe mit Musterwoche vorbelegt (Formel, grau-kursiv; eigene Einträge fett, per Regel `ISFORMULA`), alle gesperrten/berechneten Felder grau (Gilt-Spalten mit grauer Schrift), Hilfsspalten ausgeblendet, Spalten für „Teammentor*in“ verbreitert (auch Schicht-/Tagesplan); Firmenname im Tagebuch durch „Arbeitgeber“ ersetzt | direkt auf `main` |
 | 2026-11-27 | Nach 2. Test (Excel): Eingabefelder schwarz und normal (Vorbelegung nicht mehr grau-kursiv, eigene Einträge weiter fett); gesperrte/berechnete Felder kräftiger grau `#D9D9D9` (vorher `#F2F2F2`, wirkte wie Weiß), graue Schrift `#595959` | direkt auf `main` |
+| 2026-11-27 | Neuer Aufbau (Abschnitt 10a): offene **Eingabe-Datei** + privater **Stundenzettel** je Mitarbeiter, Ordner „Schichtplanung“/„Steuerung“; „krank“ → „abwesend (Gutschrift)“ (auch Hauptvorlage); Schichtplan erkennt Vertragsende über den Stundenzettel (Blatt `Werte`); neues Werkzeug `vorlagen-bauen.py`; Kettentest mit 57 Prüfpunkten | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -159,7 +161,8 @@ Vorhandene Werkzeuge (benötigen Node.js und Playwright mit Chromium; in der Cla
 | `node werkzeuge/name-und-aussehen.test.js` | Angleichung an Excel: Mitarbeitername (Hinweis ohne Komma, große Anzeige, bleibt nach Neuladen, steckt in der Sicherung), Farben gelb/grau/hellblau, Uhrzeiten 11:00–17:00, Reiter-/Überschriften; macht Handy-Screenshots. Endet mit „ERGEBNIS: alles in Ordnung“. |
 | `node werkzeuge/offline-app.test.js` | Startet einen lokalen Webserver und prüft Manifest, Symbole, Offline-Helfer und den Start ohne Internet |
 | `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT] [--anspruch TAGE] [--ab-monat N] [--urlaub K]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. `--ab-monat 7` = Ausscheiden ab Juli (Erwartung bei 30 Tagen: 15 Tage, 117:00:00), `--urlaub 15` trägt 15 Urlaubstage im Januar ein. |
-| `python3 werkzeuge/plaene.test.py` | Schicht- und Tagesplan: erzeugt ein Mini-Paket, speichert die Mitarbeiter-Dateien mit LibreOffice, setzt die gespeicherten Werte wie Excels „Werte aktualisieren“ ein und prüft Namen, Sortierung, Zeiten, Urlaub, „abwesend“ (krank), Teammentor*in, frei, HO, Platzhalter. Endet mit „ERGEBNIS: alles in Ordnung“ (dauert ca. 1–2 Min). |
+| `python3 werkzeuge/plaene.test.py` | Ganze Kette (Abschnitt 10a): erzeugt ein Mini-Paket in zwei Ordnern, speichert Eingabe-Dateien mit LibreOffice (Urlaubswarnung), aktualisiert wie Excel (gespeicherte Werte) Stundenzettel (muss **genau wie die Hauptvorlage** rechnen), Schichtplan und Tagesplan und prüft Namen, Sortierung, Zeiten, Urlaub, „abwesend“, Teammentor*in, frei, HO, Platzhalter und das Vertragsende. 57 Prüfpunkte, Ende „ERGEBNIS: alles in Ordnung“ (ca. 2 Min). |
+| `python3 werkzeuge/vorlagen-bauen.py` | Kein Test: baut aus der Hauptvorlage `excel/vorlagen/Eingabe.xlsx` und `Stundenzettel-Vorlage.xlsx` neu – **nach jeder Änderung an der Hauptvorlage ausführen**, danach `plaene.test.py` |
 | `python3 werkzeuge/plaene-erzeugen.py --ordner ORDNER [...]` | Kein Test: erzeugt Mitarbeiter-Dateien, `Schichtplan.xlsx`, `MA-Tagesplan.xlsx` (Optionen siehe Kopf der Datei; Mini-Paket: `--plaetze 3 --wochen 1 --tage 5 --mitarbeiter "Beispiel, Anna" "Test, Ben" --beispieldaten`) |
 | `werkzeuge/xlsx_spalten.py` | Kein Test: Hilfsfunktion `spalten_einfuegen(wb, blatt, idx)` – fügt Spalten ein und zieht alle Bezüge (Formeln, Namen, Formatierung, Prüfungen, Verbindungen) mit; danach immer `excel-pruefen.py` alt/neu vergleichen |
 | `node werkzeuge/symbole-erzeugen.js` | Kein Test: erzeugt aus `icons/icon.svg` alle PNG-Symbole neu (nur nach Änderung am Symbol) |
@@ -297,9 +300,40 @@ Test beim Arbeitgeber (Mini-Paket: „Beispiel, Anna.xlsx“, „Test, Ben.xlsx�
 - [ ] Ben in der Datei auf „Urlaub“ am 04.01. setzen, speichern → Schichtplan aktualisieren, speichern → Tagesplan aktualisieren → Ben grau.
 - [ ] „Kennwort zum Ändern“ an einer Datei setzen → Schichtplan aktualisiert trotzdem.
 
+Test Mini-Paket V4 (zwei Ordner nebeneinander: „Schichtplanung“ und „Steuerung“):
+- [ ] Dateien richtig verteilen (alle „Stundenzettel …“ nach „Steuerung“, Rest nach „Schichtplanung“).
+- [ ] Eingabe-Dateien (Anna, Ben, Mustermann 03) öffnen, speichern; Blatt „Start“ zeigt Name, keine Vertragsdaten.
+- [ ] Stundenzettel öffnen → aktualisieren → Tagesliste zeigt Bens Einträge, Stammdaten zeigen Name → speichern (alle drei).
+- [ ] Schichtplan öffnen → aktualisieren (Eingabe-Dateien UND Stundenzettel) → Werte wie bisher → speichern.
+- [ ] Tagesplan öffnen → aktualisieren → wie bisher.
+- [ ] In Bens Stundenzettel Jahres-Basis Januar auf 0:00 (Februar 2028:00) → speichern → Schichtplan aktualisieren → Ben im Januar ohne Zeiten.
+- [ ] In Annas Eingabe-Datei Urlaubsanspruch auf 0 → oben in der Dateneingabe rote Warnung.
+
 ### 10a. Geplanter Umbau: Eingabe-Datei (offen) + Stundenzettel (privat) – Entscheidungen vom 27.11.2026
 
-Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. Noch NICHT gebaut – erst testet der Nutzer Mini-Paket V3.
+Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. **Gebaut am 27.11.2026** (nach erfolgreichem Test von Mini-Paket V3);
+Mini-Paket V4 (zwei Ordner) zum Test beim Arbeitgeber verschickt. Abschnitt 10 gilt weiter für Schicht-/Tagesplan, außer wo hier anders.
+
+Umsetzung:
+- `vorlagen-bauen.py` leitet aus der Hauptvorlage ab:
+  - **Eingabe.xlsx**: Blätter Anleitung, Start (Name aus Dateiname, Jahr, Urlaubsanspruch in Tagen `UrlaubAnspruchTage` = Start!B5),
+    Musterwoche, Dateneingabe (ohne „kein Vertrag“/Regel-Tag; Netto nur an Arbeitstagen; A4 = Urlaubswarnung, Urlaub-Zellen rot
+    bei Überschreitung), Urlaub (nur Tage), Listen, Export (wie bisher + E/F/G = Gilt Start/Pause/Anmerkung roh, H1 = Anspruch).
+  - **Stundenzettel-Vorlage.xlsx**: Hauptvorlage ohne Export; Dateneingabe heißt **Tagesliste** (D/E/F grau, aus Blatt `Daten` =
+    Verknüpfung `[1]Export!` der Eingabe-Datei, keine Musterwoche-Ersatzwerte); Musterwoche versteckt; Stammdaten B3 = Name aus der
+    Eingabe-Datei; Urlaub A28:C28 = Abgleich Anspruch Eingabe ↔ Stammdaten; Blatt `Vertrag` A1:L1 = 1/0 je Monat (Jahres-Basis > 0).
+    Druck: Stammdaten, Urlaub, Auswertung, Tagesliste auf Seitenbreite.
+- `plaene-erzeugen.py` legt `Schichtplanung/` (Eingabe-Dateien, Schichtplan, Tagesplan) und `Steuerung/` („Stundenzettel Name.xlsx“
+  mit Verknüpfung `../Schichtplanung/Name.xlsx`) an. Schichtplan: je Platz Verknüpfung auf Eingabe-Datei (Export) UND Stundenzettel
+  (`../Steuerung/…`, Blatt Vertrag); verstecktes Blatt `Werte` = `Daten`, aber leer in Monaten ohne Vertrag; Wochenblätter und
+  Tagesplan lesen `Werte`. Mitarbeiter sehen im Schichtplan den zuletzt vom Steuerer gespeicherten Stand (Aktualisieren scheitert bei
+  ihnen am fehlenden Zugriff auf „Steuerung“ – Meldung einfach schließen).
+- Reihenfolge Steuerer: Eingabe-Dateien gespeichert → Stundenzettel aktualisieren + speichern → Schichtplan aktualisieren + speichern
+  → Tagesplan aktualisieren.
+- Ein neuer Stundenzettel, der noch nie gespeichert wurde, liefert „kein Vertrag“ (0) → der Mitarbeiter erscheint im Schichtplan ohne Zeiten,
+  bis der Steuerer den Stundenzettel einmal geöffnet und gespeichert hat.
+
+Entscheidungen:
 
 - **Abteilungsordner (alle):** je Mitarbeiter eine **Eingabe-Datei** (Musterwoche + Dateneingabe: Beginn, Pause, Anmerkung) sowie
   Schichtplan und Tagesplan. **Ordner des Steuerers (nur er):** je Mitarbeiter ein **Stundenzettel** (Stammdaten, Urlaub, Auswertung,
