@@ -121,6 +121,7 @@ Wichtige Stellen in `index.html`:
 - Schichtplan/Tagesplan: nach erfolgreichem Mini-Test beim Arbeitgeber das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
   Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
   Excel hat zusätzlich das Blatt „Anleitung“, die App erklärt in kurzen Hinweistexten.
+- Produktivstart Excel-Paket: echte Ordner-Anordnung (Schichtplanung offen, Steuerung privat, nicht nebeneinander) einbauen – Details in Abschnitt 10, „Für den Produktivstart merken“.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
   von Hand nachgezogen werden (oder bewusst nicht). Ein automatischer Vergleich App ↔ Excel fehlt noch.
 - Es gibt keinen eigenen Reiter „Einstellungen“; App-Einstellungen (Installieren, Updates, Sicherung) stehen im Reiter „1. Stammdaten“.
@@ -332,6 +333,19 @@ Stundenzettel aktualisieren+speichern → Inhaltsverzeichnis aktualisieren. Lief
 **Versand per E-Mail:** immer an die Arbeits-Adresse des Nutzers (wie bisher, steht im Gmail-Postausgang – NICHT hier eintragen), als
 einzelne `.xlsx`-Dateien, **keine ZIP-Dateien** (Wunsch des Nutzers). Grenzen des Gmail-Werkzeugs: höchstens **10 Anhänge** und ca. **3 MB**
 je E-Mail → großes Paket = 9 E-Mails (1: Schicht-/Tagesplan, 2–5: Eingabe-Dateien, 6–9: Inhaltsverzeichnis + Stundenzettel).
+
+**Für den Produktivstart merken (Fragen des Nutzers, 27.11.2026):**
+- **Ordner liegen später NICHT nebeneinander:** „Schichtplanung“ kommt in einen Ordner für alle Mitarbeiter, „Steuerung“ in einen Unterordner,
+  auf den nur der Steuerer zugreifen kann (gleiches Laufwerk). Die Verknüpfungen sind relativ und setzen bisher fest „nebeneinander“ voraus
+  (`../Steuerung/…`, `../Schichtplanung/…` in `plaene-erzeugen.py`, Konstanten `OFFEN`/`PRIVAT`). → Vor dem Produktivpaket den echten Weg
+  beider Ordner erfragen (Laufwerk, Ordner ab der Abzweigung; nur Struktur, keine persönlichen Daten ins Repository) und `plaene-erzeugen.py`
+  um eine Option für den relativen Weg zwischen beiden Ordnern erweitern; Kettentest anpassen. Betroffen: Eingabe-Datei ↔ Stundenzettel und
+  Inhaltsverzeichnis → Stundenzettel (liegen beide in „Steuerung“, unkritisch). Schicht-/Tagesplan liegen bei den Eingabe-Dateien (unkritisch).
+  Danach darf die Anordnung nicht mehr geändert werden.
+- **Umbenennen erlaubt:** Schichtplan, MA-Tagesplan und Inhaltsverzeichnis (auf sie zeigt keine Verknüpfung). Wunsch: „001 MA-Tagesplan“,
+  „002 Schichtplan“ (ggf. „000 Inhaltsverzeichnis“), damit sie im Explorer oben stehen – beim Produktivpaket gleich so erzeugen (nachfragen).
+  NICHT umbenennen: Eingabe-Dateien, Stundenzettel, die Ordner.
+- **Ordner verschieben:** nur beide zusammen und mit gleicher Anordnung zueinander; danach in einer Eingabe-Datei „Links bearbeiten → Status“ prüfen.
 
 Ältere Übergabe:
 
