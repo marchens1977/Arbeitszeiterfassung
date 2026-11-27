@@ -107,6 +107,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Stundenzettel: Überschriften ohne Nummern und auf allen Blättern mit Namen (Stammdaten, Tagesliste, Urlaub, Auswertung); Kettentest 68 Prüfpunkte | direkt auf `main` |
 | 2026-11-27 | Anleitungs-Blätter entfernt (Eingabe-Datei, Stundenzettel, Schichtplan) und Erklärtext in der Tagesplan-Übersicht gestrichen – der Steuerer erklärt das Tool bei der Einweisung; Kettentest 70 Prüfpunkte | direkt auf `main` |
 | 2026-11-27 | Nach Test V6: `#BEZUG!` in der ganzen Dateneingabe, wenn die Verknüpfung zum Stundenzettel (noch) einen Fehler liefert → alle Formeln, die Verknüpfungen auswerten, mit `IFERROR` abgesichert (Eingabe-Datei: „keine Vorgabe“, Stundenzettel: leer, Schicht-/Tagesplan: leer). Neu: `Steuerung/Inhaltsverzeichnis.xlsx` (Stundenzettel-Nr. → Name, Klick öffnet die Datei); `plaene-erzeugen.py --testnamen` (35 erfundene „Mustermann, Vorname“ mit unterschiedlichen Musterwochen). Großes Test-Paket per E-Mail; Kettentest 84 Prüfpunkte | direkt auf `main` |
+| 2026-11-27 | Test des großen Pakets V7 beim Arbeitgeber abgeschlossen (35 Testpersonen, schnell genug); Beobachtungen 2–6 im Tagebuch gesammelt (u. a. Verknüpfung geht bei falscher Reihenfolge verloren), Umsetzung in der nächsten Sitzung | – |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -121,6 +122,7 @@ Wichtige Stellen in `index.html`:
 - Schichtplan/Tagesplan: nach erfolgreichem Mini-Test beim Arbeitgeber das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
   Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
   Excel hat zusätzlich das Blatt „Anleitung“, die App erklärt in kurzen Hinweistexten.
+- **Nächste Sitzung:** Beobachtungen 4–6 aus Test V7 umsetzen (Abschnitt 10, „HIER WEITERMACHEN“).
 - Produktivstart Excel-Paket: echte Ordner-Anordnung (Schichtplanung offen, Steuerung privat, nicht nebeneinander) einbauen – Details in Abschnitt 10, „Für den Produktivstart merken“.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
   von Hand nachgezogen werden (oder bewusst nicht). Ein automatischer Vergleich App ↔ Excel fehlt noch.
@@ -322,7 +324,39 @@ Test Mini-Paket V4 (erledigt; Ergebnis führte zu V5):
 
 ### Übergabe für die nächste Sitzung (Stand 27.11.2026)
 
-**Neuester Stand (27.11.2026, nach Test V6):** Mini-Test bestanden. Großes Test-Paket (35 erfundene „Mustermann, Vorname“, 52 Wochen,
+**>>> HIER WEITERMACHEN (Stand 27.11.2026 abends): Test des großen Pakets V7 ist FERTIG. Nächster Schritt: Beobachtungen 4–6
+bewerten, Lösung vorschlagen, Nutzer fragen (direkt auf `main`?), umsetzen, `plaene.test.py`, neues Paket schicken.**
+
+Ergebnis Test V7 (35 Testpersonen, Excel beim Arbeitgeber):
+- Funktioniert: Eingabe-Datei → Stundenzettel → Inhaltsverzeichnis (bei richtiger Reihenfolge); Schichtplan und Tagesplan zeigen alle 35
+  korrekt; Öffnen/Aktualisieren **unter einer Minute** – die Größe ist kein Problem.
+- Richtige Reihenfolge beim ersten Mal (so dem Nutzer erklärt): 1. alle Eingabe-Dateien öffnen, NUR „Bearbeitung aktivieren“ (NICHT
+  „Inhalte aktivieren“), speichern, schließen → 2. Stundenzettel öffnen, Bearbeitung + Inhalte aktivieren/„Aktualisieren“, Name prüfen,
+  speichern → 3. Inhaltsverzeichnis, Schichtplan, Tagesplan aktualisieren → 4. (optional) Eingabe-Dateien nochmals mit Inhalten
+  aktivieren → Reststunden. Nicht getestet: Reststunden in der Eingabe-Datei, Änderung durchreichen (Urlaub → Schichtplan).
+
+Gesammelte Beobachtungen (offen, zur Umsetzung):
+1. `#BEZUG!` beim ersten Öffnen – **erledigt** (IFERROR, V7).
+2. Schichtplan, Tagesplan, Inhaltsverzeichnis dürfen umbenannt werden („001 MA-Tagesplan“, „002 Schichtplan“, ggf. „000 Inhaltsverzeichnis“)
+   → beim Produktivpaket gleich so erzeugen (vorher kurz nachfragen).
+3. Ordner liegen im Produktivbetrieb nicht nebeneinander → siehe „Für den Produktivstart merken“ unten.
+4. Erstes Füllen ist mühsam (70 Dateien der Reihe nach öffnen/speichern).
+5. **Wichtigster Punkt:** Excel ersetzt eine Verknüpfung DAUERHAFT durch `=#BEZUG!`, wenn aktualisiert wird, solange die Quelldatei noch nie in
+   Excel gespeichert wurde (von openpyxl erzeugt, ohne gespeicherte Werte). Passiert: Stundenzettel 01 (vor der Eingabe-Datei aktualisiert)
+   und danach Zeile 01 im Inhaltsverzeichnis. Folge: „Workbook Links“ grau (Excel kennt keine Verknüpfung mehr), Datei unbrauchbar → frisch
+   aus der E-Mail nehmen. Beim Öffnen ist die Verknüpfung noch da (Frage „enthält Verknüpfungen…“), sie geht erst beim Aktualisieren verloren.
+   Lösungsidee (4+5): Paket **vorgespeichert** ausliefern (z. B. per LibreOffice alle Dateien in richtiger Reihenfolge rechnen und speichern,
+   sodass jede Datei gespeicherte Werte und gefüllte Verknüpfungs-Zwischenspeicher hat). Achtung: `CELL("filename")` (Name aus Dateiname)
+   darf dabei NICHT als fester Text landen – der Test setzt Listen!O2 per Hand, das wäre für die Auslieferung falsch. Danach unbedingt
+   vom Nutzer in Excel prüfen lassen.
+6. a) Stundenzettel über den Klick-Link im Inhaltsverzeichnis geöffnet → gelbe Leiste „Aktualisierung nicht möglich … Links der Arbeitsmappe
+   verwalten“ (Werte bleiben, nichts kaputt); per Doppelklick im Explorer klappt alles. → Link anders bauen oder Hinweis „im Explorer öffnen“.
+   b) Excels Bereich „Links zu Arbeitsmappen“ zeigt ein gelbes Dreieck „Link befindet sich auf einem ausgeblendeten Blatt“ (Verknüpfungen
+   liegen absichtlich in versteckten Blättern `Daten`/`Vorgaben`) → prüfen, ob Blätter sichtbar+gesperrt sein sollen (Nutzer entscheiden lassen).
+- Bedienhinweise aus dem Test: In diesem Excel heißt der Knopf **Daten → „Workbook Links“** („Links zu Arbeitsmappen“); „Alle aktualisieren“
+  reicht für Verknüpfungen evtl. nicht. Arbeitsmappenschutz (Struktur) ist an; er war NICHT der Grund für den grauen Knopf.
+
+**Stand vor Test V7 (27.11.2026, nach Test V6):** Mini-Test bestanden. Großes Test-Paket (35 erfundene „Mustermann, Vorname“, 52 Wochen,
 alle Arbeitstage, `--plaetze 35 --testnamen`) per E-Mail beim Nutzer – er testet damit die große Anzahl. Stundenzettel bleiben nummeriert
 (Entscheidung des Nutzers: Variante „Inhaltsverzeichnis“ statt Namen im Dateinamen, weil sonst beim Mitarbeiterwechsel mehr umzustellen wäre).
 Regel: Mitarbeiternamen in Testpaketen immer „Mustermann, <Fantasievorname>“ (nie mit „Max“ beginnen – „Mustermann, Max…“ = freier Platz).
