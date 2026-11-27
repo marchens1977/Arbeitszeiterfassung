@@ -175,28 +175,7 @@ def eingabe():
     rest += [(n, dn.attr_text) for n, dn in wb.defined_names.items() if 'Stammdaten' in dn.attr_text or 'Auswertung' in dn.attr_text]
     assert not rest, f'Verweise auf entfernte Blätter: {rest[:5]}'
 
-    anleitung(wb['Anleitung'], [
-        ('Schichtplanung – Eingabe-Datei – Anleitung', 'h'), ('', 't'),
-        ('Wofür ist diese Datei?', 'u'),
-        ('Hier planst du deine Arbeitszeiten. Daraus entstehen automatisch Schichtplan und Tagesplan. Die Datei liegt im offenen '
-         'Ordner – Kollegen können sie ansehen, aber nur du (Kennwort zum Ändern) und der Steuerer können sie ändern. '
-         'Vertrag und Stundenkonto führt der Steuerer im Stundenzettel; von dort kommen Urlaubsanspruch und Reststunden.', 't'),
-        ('Farben', 'u'), ('Gelb = hier eintragen · Grau = rechnet Excel · fett = eigener Eintrag · Rot = mehr Urlaub als Anspruch', 't'),
-        ('Schritt für Schritt', 'u'),
-        ('1. Blatt „Musterwoche“: üblichen Arbeitsbeginn (11:00–17:00) oder „Frei“, Pause und ggf. Anmerkung (Homeoffice, Teammentor*in) wählen.', 't'),
-        ('2. Blatt „Dateneingabe“: Die gelben Felder zeigen schon die Musterwoche. Abweichende Tage (Urlaub, Frei, anderer Beginn, '
-         'Homeoffice …) im Klappmenü wählen. Oben siehst du deine Reststunden zum Jahresende. Speichern nicht vergessen – '
-         'Schicht- und Tagesplan lesen nur gespeicherte Werte.', 't'),
-        ('3. Blatt „Urlaub“: Anspruch, eingetragene Urlaubstage und Rest in Tagen.', 't'),
-        ('Name', 'u'), ('Der Name kommt aus dem Dateinamen („Nachname, Vorname.xlsx“).', 't'),
-        ('„abwesend (Gutschrift)“', 'u'),
-        ('Trägt nur der Steuerer ein. Die geplante Zeit wird gutgeschrieben; im Schichtplan steht nur „abwesend“.', 't'),
-        ('Meldung zu Verknüpfungen', 'u'),
-        ('Beim Öffnen meldet Excel evtl., dass Verknüpfungen nicht aktualisiert werden können (Ordner „Steuerung“). Einfach schließen bzw. '
-         '„Nicht aktualisieren“ – die Vorgaben des Steuerers bleiben gespeichert.', 't'),
-        ('Schutz', 'u'),
-        ('Datei → Speichern unter → Tools → Allgemeine Optionen → „Kennwort zum Ändern“ (NICHT „Kennwort zum Öffnen“). Keine Makros.', 't'),
-    ])
+    del wb['Anleitung']                     # keine Anleitung – erklärt der Steuerer bei der Einweisung
     wb.active = wb.sheetnames.index('Dateneingabe')
     wb.save(os.path.join(ZIEL, 'Eingabe.xlsx'))
 
@@ -269,33 +248,9 @@ def stundenzettel():
         ws.sheet_properties.pageSetUpPr.fitToPage = True
     wb['Tagesliste'].print_title_rows = '5:5'
 
-    anleitung(wb['Anleitung'], [
-        ('Stundenzettel – Anleitung (nur für den Steuerer)', 'h'), ('', 't'),
-        ('Wofür ist diese Datei?', 'u'),
-        ('Der Stundenzettel liegt im Ordner „Steuerung“, auf den nur der Steuerer Zugriff hat. Er enthält Vertrag (Stammdaten), '
-         'Urlaub, Stundenkonto (Auswertung) und die Tagesliste. Die Tagesliste kommt automatisch aus der Eingabe-Datei des '
-         'Mitarbeiters im Ordner „Schichtplanung“.', 't'),
-        ('Aktualisieren', 'u'),
-        ('Mitarbeiter speichert seine Eingabe-Datei → hier Datei öffnen → „Inhalt aktivieren“ bzw. Daten → Links bearbeiten → '
-         '„Werte aktualisieren“ → speichern.', 't'),
-        ('Vorgaben für die Eingabe-Datei', 'u'),
-        ('Jahr, Urlaubsanspruch, Soll, Vertragsmonate und die Werte der Stundenabrechnung 057 gehen von hier an die Eingabe-Datei '
-         '(dort für Reststunden, Urlaubswarnung und „kein Vertrag“). Nach jeder Änderung hier: speichern, dann die Eingabe-Datei des '
-         'Mitarbeiters öffnen → Werte aktualisieren → speichern.', 't'),
-        ('Ausdruck / PDF für den Mitarbeiter', 'u'),
-        ('Blätter Stammdaten, Urlaub, Auswertung und Tagesliste markieren (Strg + Klick auf die Reiter) → Datei → Drucken bzw. '
-         'Exportieren → PDF. Die Blätter sind auf Seitenbreite eingestellt.', 't'),
-        ('Abwesenheit (z. B. Krankheit)', 'u'),
-        ('In der EINGABE-Datei des Mitarbeiters am Tag die Anmerkung „abwesend (Gutschrift)“ wählen. Die geplante Zeit wird '
-         'gutgeschrieben; Schicht- und Tagesplan zeigen nur „abwesend“. Der Grund wird nirgends gespeichert.', 't'),
-        ('Ein- und Austritt', 'u'),
-        ('In den Stammdaten die Jahres-Basis für Monate ohne Vertrag auf 0:00 setzen → Urlaub wird anteilig. Speichern, dann die '
-         'Eingabe-Datei des Mitarbeiters aktualisieren und speichern → dort und im Schicht-/Tagesplan erscheinen diese Monate als '
-         '„kein Vertrag“ bzw. leer.', 't'),
-        ('Rechenregeln', 'u'),
-        ('Regel-Tag = Jahresstunden ÷ 52 ÷ 5 · Arbeitstag: 19:00 − Beginn − Pause · Feiertag zählt einen Regel-Tag aufs Ist · '
-         'Urlaub mindert das Soll · Frei = 0 · Soll = Vertrag − Urlaub ± Übertrag + vereinbarte Überstunden − unbezahlter Urlaub.', 't'),
-    ])
+    del wb['Anleitung']                     # keine Anleitung – erklärt der Steuerer bei der Einweisung
+    wb.active = wb.sheetnames.index('Stammdaten')
+    for ws in wb: ws.sheet_view.tabSelected = (ws.title == 'Stammdaten')
     wb.save(os.path.join(ZIEL, 'Stundenzettel-Vorlage.xlsx'))
 
 

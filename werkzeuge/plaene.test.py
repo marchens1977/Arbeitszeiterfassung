@@ -117,7 +117,7 @@ for n in MA:
     pruefe(f'{n}: Name im Export', wert(d, 'Export', 'B1'), n)
     if n == MA[0]:
         pruefe('Eingabe: Blätter (ohne Start/Stammdaten/Auswertung)', ','.join(d.Sheets.ElementNames),
-               'Anleitung,Musterwoche,Dateneingabe,Urlaub,Listen,Export,Vorgaben')
+               'Musterwoche,Dateneingabe,Urlaub,Listen,Export,Vorgaben')
         pruefe('Eingabe: Titel Dateneingabe', wert(d, 'Dateneingabe', 'A1'), 'Dateneingabe 2027 – Beispiel, Anna')
         pruefe('Eingabe: Titel Musterwoche', wert(d, 'Musterwoche', 'A1'), 'Musterwoche (Montag bis Freitag) – Beispiel, Anna')
         pruefe('Eingabe: Titel Urlaub', wert(d, 'Urlaub', 'A1'), 'Urlaubsübersicht – Beispiel, Anna')
@@ -132,6 +132,7 @@ aktualisieren_wie_excel(f'{OFFEN}/Schichtplan.xlsx')
 sp = oeffnen(f'{OFFEN}/Schichtplan.xlsx'); sp.calculateAll()
 W = '04.01.2027'
 print('--- Schichtplan, Woche', W, '(direkt aus den Eingabe-Dateien)')
+pruefe('Schichtplan ohne Anleitung', 'Anleitung' in sp.Sheets.ElementNames, False)
 pruefe('Zeile 1 Name', wert(sp, W, 'A4'), 'Beispiel, Anna')
 pruefe('Zeile 2 Name', wert(sp, W, 'A5'), 'Test, Ben')
 pruefe('Platzhalter ausgeblendet', wert(sp, W, 'A6'), '')
@@ -195,6 +196,7 @@ for n in MA:
     aktualisieren_wie_excel(f'{PRIVAT}/{SZN[n]}')
 sz = oeffnen(f'{PRIVAT}/{SZN[MA[1]]}'); sz.calculateAll()
 pruefe('Name aus der Eingabe-Datei', wert(sz, 'Stammdaten', 'B3'), 'Test, Ben')
+pruefe('Stundenzettel ohne Anleitung', 'Anleitung' in sz.Sheets.ElementNames, False)
 for blatt, titel in (('Stammdaten', 'Stammdaten'), ('Tagesliste', 'Tagesliste 2027'), ('Urlaub', 'Urlaubsübersicht & Abgleich'),
                      ('Auswertung', 'Auswertung & Jahresbilanz 2027')):
     pruefe(f'Stundenzettel Titel {blatt}', wert(sz, blatt, 'A1'), titel + ' – Test, Ben')

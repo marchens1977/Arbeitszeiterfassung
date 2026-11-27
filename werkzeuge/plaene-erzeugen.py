@@ -225,43 +225,8 @@ def schichtplan(ordner, namen, n_wochen):
         ws.sheet_properties.pageSetUpPr.fitToPage = True
         ws.protection.sheet = True
 
-    # --- Anleitung
-    zeilen = [
-        ('Schichtplan – Anleitung', True),
-        ('Was ist das?', True),
-        ('Der Schichtplan zeigt für jede Woche, wer wann arbeitet. Die Werte kommen direkt aus den Eingabe-Dateien der '
-         'Mitarbeiter („Nachname, Vorname.xlsx“) im selben Ordner. Monate ohne Vertrag bleiben leer (das steht in der '
-         'Eingabe-Datei, vom Steuerer aus dem Stundenzettel übernommen).', False),
-        ('Mitarbeiter (nicht Steuerer)', True),
-        ('Beim Öffnen fragt Excel evtl. nach dem Aktualisieren von Verknüpfungen: „Nicht aktualisieren“ wählen bzw. die '
-         'Meldung schließen. Du siehst den Stand, den der Steuerer zuletzt gespeichert hat.', False),
-        ('Aktualisieren (ohne Makros)', True),
-        ('Mitarbeiter speichern ihre Eingabe-Datei → Schichtplan bzw. MA-Tagesplan öffnen und aktualisieren. '
-         'Beide lesen direkt aus den Eingabe-Dateien und sind voneinander unabhängig.', False),
-        ('1. Datei öffnen. Erscheint oben ein gelber Balken „Sicherheitswarnung … Verknüpfungen“: „Inhalt aktivieren“ klicken.', False),
-        ('2. Sonst: Menü Daten → Links bearbeiten (bzw. Verknüpfungen bearbeiten) → alle markieren → „Werte aktualisieren“.', False),
-        ('3. Speichern, damit Mitarbeiter beim Öffnen den neuen Stand sehen.', False),
-        ('Wichtig: Es zählen die zuletzt GESPEICHERTEN Werte der Mitarbeiter-Dateien.', False),
-        ('Farben', True),
-        ('Grün = Urlaub oder Feiertag · Grau = abwesend (Grund wird nicht angezeigt) · Hellgrau = frei · '
-         'Gelb = Homeoffice · Hellblau = Teammentor*in', False),
-        ('Mitarbeiter wechseln', True),
-        ('1. Im Ordner „Schichtplanung“ die Eingabe-Datei umbenennen („Nachname, Vorname.xlsx“), öffnen, speichern.', False),
-        ('2. Im Ordner „Steuerung“ den Stundenzettel mit derselben Platz-Nr. öffnen (Name bleibt „Stundenzettel NN.xlsx“), '
-         'Daten → Links bearbeiten → alte Eingabe-Datei markieren → „Quelle ändern“ → neue Eingabe-Datei wählen; '
-         'Stammdaten anpassen; speichern. Danach die Eingabe-Datei öffnen → Werte aktualisieren → speichern.', False),
-        ('3. Im Schichtplan UND im MA-Tagesplan: Daten → Links bearbeiten → alten Namen markieren → „Quelle ändern“ → '
-         'neue Eingabe-Datei wählen → speichern.', False),
-        ('Schutz', True),
-        ('Blätter sind ohne Passwort geschützt. Gegen fremde Änderungen: Datei → Speichern unter → Tools → '
-         'Allgemeine Optionen → „Kennwort zum Ändern“ (NICHT „Kennwort zum Öffnen“, sonst klappt das Aktualisieren nicht).', False),
-    ]
-    for i, (t, fett) in enumerate(zeilen, start=1):
-        c = an.cell(i, 1, t); c.alignment = Alignment(wrap_text=True, vertical='top')
-        c.font = Font(bold=fett, size=14 if i == 1 else 11, color=BLAU if fett else None)
-    an.column_dimensions['A'].width = 110
-    an.sheet_properties.tabColor = 'FF5910'
-    wb.active = wb.sheetnames.index(wb.sheetnames[3]) if n_wochen else 1
+    del wb['Anleitung']                     # keine Anleitung – erklärt der Steuerer bei der Einweisung
+    wb.active = 2 if n_wochen else 0          # erstes Wochenblatt (Mitarbeiter, Daten, Wochen …)
     wb.save(os.path.join(ordner, OFFEN, 'Schichtplan.xlsx'))
 
 
@@ -275,11 +240,6 @@ def tagesplan(ordner, namen, n_tage):
     tage = [d for d in werktage(JAHR) if d not in feiertage_hessen(JAHR) and d >= dt.date(JAHR, 1, 4)]
     if n_tage: tage = tage[:n_tage]
     ue['A1'] = 'MA-Tagesplan – Übersicht'; ue['A1'].font = Font(bold=True, size=14, color=BLAU)
-    ue['A2'] = ('Ein Blatt je Arbeitstag (ohne Wochenenden und hessische Feiertage). Namen, Beginn, Pause und Anmerkung kommen '
-                'direkt aus den Eingabe-Dateien der Mitarbeiter (beim Öffnen „Inhalt aktivieren“ bzw. Daten → Links bearbeiten → '
-                '„Werte aktualisieren“). Gelbe Kampagnen-Felder trägst du selbst ein. Grau = an dem Tag nicht da. '
-                'Mitarbeiterwechsel: auch hier Daten → Links bearbeiten → „Quelle ändern“.')
-    ue['A2'].alignment = Alignment(wrap_text=True, vertical='top'); ue.merge_cells('A2:F2'); ue.row_dimensions[2].height = 60
     ue.column_dimensions['A'].width = 34
     for i, d in enumerate(tage):
         name = d.strftime('%d.%m.%Y')

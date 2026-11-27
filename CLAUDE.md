@@ -105,6 +105,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Neuer Aufbau (Abschnitt 10a): offene **Eingabe-Datei** + privater **Stundenzettel** je Mitarbeiter, Ordner „Schichtplanung“/„Steuerung“; „krank“ → „abwesend (Gutschrift)“ (auch Hauptvorlage); Schichtplan erkennt Vertragsende über den Stundenzettel (Blatt `Werte`); neues Werkzeug `vorlagen-bauen.py`; Kettentest mit 57 Prüfpunkten | direkt auf `main` |
 | 2026-11-27 | Nach Test V4: Eingabe-Datei ohne Blatt „Start“ (Jahr/Urlaubsanspruch/Soll/Vertragsmonate/057 kommen per Verknüpfung aus dem Stundenzettel, Blatt `Vorgaben`), Name in den Titeln, keine Nummern, **Reststunden zum Jahresende** (rot „noch zu leisten“, grün „zu viel geleistet“, fett); Stundenzettel heißen „Stundenzettel 01–35.xlsx“; Schicht- UND Tagesplan lesen direkt die Eingabe-Dateien (kein Speichern des Stundenzettels/Schichtplans mehr nötig); ohne Vorgabe gilt „Vertrag besteht“; Kettentest 64 Prüfpunkte | direkt auf `main` |
 | 2026-11-27 | Stundenzettel: Überschriften ohne Nummern und auf allen Blättern mit Namen (Stammdaten, Tagesliste, Urlaub, Auswertung); Kettentest 68 Prüfpunkte | direkt auf `main` |
+| 2026-11-27 | Anleitungs-Blätter entfernt (Eingabe-Datei, Stundenzettel, Schichtplan) und Erklärtext in der Tagesplan-Übersicht gestrichen – der Steuerer erklärt das Tool bei der Einweisung; Kettentest 70 Prüfpunkte | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -323,6 +324,8 @@ Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. **Gebaut am 27.1
 „Stand V5“ unten – geht vor, wo es den Punkten darunter widerspricht). Abschnitt 10 gilt weiter für Schicht-/Tagesplan, außer wo hier anders.
 
 **Stand V5 (Wünsche nach Test V4):**
+- **Keine Anleitungs-Blätter** in Eingabe-Datei, Stundenzettel und Schichtplan (Wunsch des Nutzers: erklärt er bei der Einweisung).
+  Die kurzen Hinweiszeilen unter den Überschriften der Blätter bleiben.
 - Eingabe-Datei: kein Blatt „Start“ mehr; Blätter Anleitung, Musterwoche, Dateneingabe, Urlaub (+ versteckt Listen, Export, Vorgaben).
   Titel „Musterwoche … – Name“, „Dateneingabe 2027 – Name“, „Urlaubsübersicht – Name“ (keine Nummern). Ebenso im Stundenzettel:
   „Stammdaten – Name“, „Tagesliste 2027 – Name“, „Urlaubsübersicht & Abgleich – Name“, „Auswertung & Jahresbilanz 2027 – Name“. Name weiter aus dem Dateinamen
