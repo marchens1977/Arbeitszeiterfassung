@@ -318,6 +318,21 @@ Test Mini-Paket V4 (erledigt; Ergebnis führte zu V5):
 - [ ] In Bens Stundenzettel Jahres-Basis Januar auf 0:00 (Februar 2028:00) → speichern → Schichtplan aktualisieren → Ben im Januar ohne Zeiten.
 - [ ] In Annas Eingabe-Datei Urlaubsanspruch auf 0 → oben in der Dateneingabe rote Warnung.
 
+### Übergabe für die nächste Sitzung (Stand 27.11.2026)
+
+- **Mini-Paket V6** (alle Änderungen bis hier, 3 Plätze, 1 Woche, 5 Tage) ist per E-Mail beim Nutzer; er testet es in der NÄCHSTEN Sitzung
+  in seinem Arbeitsumfeld (zwei Ordner „Schichtplanung“/„Steuerung“). Erzeugen: `python3 werkzeuge/plaene-erzeugen.py --ordner X
+  --plaetze 3 --wochen 1 --tage 5 --mitarbeiter "Beispiel, Anna" "Test, Ben" --beispieldaten` (vorher `vorlagen-bauen.py`).
+- Ablauf in der nächsten Sitzung: Nutzer meldet Beobachtungen nacheinander → Claude sammelt nur (nummeriert) → erst bei
+  „Test fertig“ bewerten und umsetzen → `plaene.test.py` → in `main` → Mini-Paket per E-Mail (Adresse kennt der Nutzer / steht in seinen
+  Einstellungen, NICHT hier eintragen).
+- Danach: **volles Paket** erzeugen (35 Plätze, 52 Wochen, alle Arbeitstage: `--plaetze 35` ohne `--wochen/--tage`, Namen der echten
+  Mitarbeiter NICHT ins Repository) und schicken.
+- Offen: Kurze Hinweiszeilen unter den Blatt-Überschriften (z. B. Dateneingabe A2) – Nutzer wurde gefragt, ob sie auch weg sollen; noch
+  keine Antwort (bisher behalten). App bleibt außen vor (siehe Abschnitt 4).
+- Für LibreOffice-Tests: eigenes Profil mit `BlockUntrustedRefererLinks=false` und `MacroSecurityLevel=0` (macht `plaene.test.py` selbst);
+  `pkill -x soffice.bin` statt `pkill -f` (sonst beendet man die eigene Shell).
+
 ### 10a. Geplanter Umbau: Eingabe-Datei (offen) + Stundenzettel (privat) – Entscheidungen vom 27.11.2026
 
 Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. **Gebaut am 27.11.2026**; nach Test V4 überarbeitet (Stand V5, siehe
