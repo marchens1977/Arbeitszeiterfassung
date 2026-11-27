@@ -70,12 +70,14 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Excel: Stammdaten Zeile 3 „Mitarbeiter“ – Name wird aus dem Dateinamen gelesen („Mustermann, Max.xlsx“ → „Mustermann, Max“), Hinweis bei falschem Dateinamen; Name `Mitarbeiter` | #11 |
 | 2026-11-27 | Excel: Mitarbeiter auffälliger – Überschrift „1. Stammdaten – Nachname, Vorname“ (bleibt beim Scrollen stehen), Feld B3:C3 verbunden, blau mit großer weißer Schrift und orangem Rahmen; Hinweis jetzt in D3 | direkt auf `main` |
 | 2026-11-27 | Excel: Klappmenü „Start / Status“ in der Musterwoche ebenfalls nur noch Frei und 11:00–17:00 (15-Minuten-Takt; Liste `ListeMuster` = `Listen!B2:B27`) | direkt auf `main` |
+| 2026-11-27 | Excel (Rechenmodell auf Wunsch erweitert): Ausscheiden unter dem Jahr – Monate mit Jahres-Basis 0 zählen nicht („kein Vertrag“, grau), Urlaub anteilig (Anspruch × Vertragsmonate ÷ 12, gesetzlich gerundet), Urlaubsstunden mit Ø Regel-Tag nur der Vertragsmonate; Urlaubsblatt: Block rot/grün; `excel-pruefen.py` mit `--ab-monat`, `--anspruch`, `--urlaub` | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
 - Vorbelegter Urlaub: Der 26.03.2027 (Karfreitag) war als Urlaub eingetragen und zählt nicht; dadurch sind nur
   29 statt 30 Tage vorbelegt. Nutzer kann einen Tag nachtragen – oder die Vorbelegung wird angepasst.
 - Vorbereitung auf ein neues Jahr (2028): Jahr umstellen, vorbelegten Urlaub pflegen, ggf. Übernahme des Übertrags.
+- Die App kennt das Ausscheiden unter dem Jahr (anteiliger Urlaub, Monate ohne Vertrag) noch nicht – nur die Excel-Datei.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
   von Hand nachgezogen werden (oder bewusst nicht). Ein automatischer Vergleich App ↔ Excel fehlt noch.
 - Es gibt keinen eigenen Reiter „Einstellungen“; App-Einstellungen (Installieren, Updates, Sicherung) stehen im Reiter „1. Stammdaten“.
@@ -117,7 +119,7 @@ Vorhandene Werkzeuge (benötigen Node.js und Playwright mit Chromium; in der Cla
 | `node werkzeuge/sicherung.test.js` | Sicherung als Text: kopieren, Daten ändern, wiederherstellen, ungültigen Text abweisen; macht einen Handy-Screenshot |
 | `node werkzeuge/updates.test.js` | Kopiert die App in einen Testordner, startet dort einen Webserver und „veröffentlicht“ neue Versionen: prüft Versionsanzeige, Knopf „Jetzt nach Updates suchen“, automatisches Neuladen, Warten während einer Bearbeitung, Daten bleiben erhalten, automatische Suche ohne Knopf |
 | `node werkzeuge/offline-app.test.js` | Startet einen lokalen Webserver und prüft Manifest, Symbole, Offline-Helfer und den Start ohne Internet |
-| `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. |
+| `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT] [--anspruch TAGE] [--ab-monat N] [--urlaub K]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. `--ab-monat 7` = Ausscheiden ab Juli (Erwartung bei 30 Tagen: 15 Tage, 117:00:00), `--urlaub 15` trägt 15 Urlaubstage im Januar ein. |
 | `node werkzeuge/symbole-erzeugen.js` | Kein Test: erzeugt aus `icons/icon.svg` alle PNG-Symbole neu (nur nach Änderung am Symbol) |
 
 Ergebnis lesen: Die Prüfungen geben ihre Ergebnisse als Text aus und brechen nicht von selbst mit „Fehlgeschlagen“ ab.
@@ -157,6 +159,14 @@ Aufbau (Blätter):
 
 Wichtig:
 - Gleiches Rechenmodell wie die App (Regel-Tag = Jahresstunden / 52 / 5; Urlaub vom Soll abgezogen; Feiertage zählen auf das Ist).
+  **Zusätzlich nur in Excel (Wunsch des Nutzers, 27.11.2026) – Ausscheiden/Eintritt unter dem Jahr:**
+  - Monat mit Jahres-Basis 0 = kein Vertrag: Dateneingabe zeigt „kein Vertrag“ (grau), Netto 0, Urlaub dort zählt nicht.
+  - Urlaub anteilig: Stammdaten G35 = Anspruch volles Jahr (B5), G36 = Monate mit Jahres-Basis > 0, G39 = G35 × G36 ÷ 12,
+    G37 (`UrlaubAnspruchTage`) = gesetzlich gerundet (BUrlG § 5: ab halbem Tag aufrunden, kleinere Bruchteile bleiben, auf 2 Stellen).
+    Beispiele bei 30 Tagen: 6 Monate → 15, 7 → 18 (17,5), 5 → 13 (12,5); bei 31 Tagen und 7 Monaten → 18,08.
+  - Urlaubsstunden = Tage × Ø Regel-Tag **nur der Vertragsmonate** (G38), sonst würde doppelt gekürzt.
+  - Stammdaten C5 zeigt „Anteilig x von 12 Monaten: y Tage“.
+  - Urlaubsblatt A4:B6: grün, wenn genommen = zustehend; sonst rot. C6 zeigt „Noch x Tage offen“ bzw. Warnung.
 - Zeiten als Stunden:Minuten eingeben (`12:30`), nicht als Kommazahl – **auch die Jahres-Basis** (`2028:00`, Anzeige `2028:00:00`).
   Intern ist sie ein Excel-Zeitwert (Tage); die Prüfung lässt höchstens 5000 Std. zu, damit `2028` ohne Doppelpunkt abgewiesen wird.
 - Zahlenformat `0.##` nicht verwenden: es zeigt bei ganzen Zahlen ein Komma („30,“). Stattdessen `General`
@@ -179,4 +189,6 @@ Tests für den Nutzer (Excel):
 - [ ] Dateneingabe: Klappmenü „Start / Status“ zeigt Urlaub, Feiertag, Frei und 11:00 bis 17:00.
 - [ ] Musterwoche: Klappmenü „Start / Status“ zeigt Frei und 11:00 bis 17:00.
 - [ ] Excel am PC: Datei als „Mustermann, Max.xlsx“ speichern, neu öffnen → Stammdaten zeigt oben „1. Stammdaten – Mustermann, Max“ und das blaue Feld „Mitarbeiter“.
+- [ ] Ausscheiden: Jahres-Basis Juli–Dezember auf `0:00` → Stammdaten zeigt „Anteilig 6 von 12 Monaten: 15 Tage“, Urlaub 15 Tage / 117:00:00, Juli–Dezember in der Dateneingabe grau „kein Vertrag“.
+- [ ] Urlaubsblatt: Block oben rot, solange genommener ≠ zustehender Urlaub; grün, wenn genau gleich.
 - [ ] Gleiche Eingaben wie in der App → gleiche Jahresbilanz (stichprobenartig vergleichen).
