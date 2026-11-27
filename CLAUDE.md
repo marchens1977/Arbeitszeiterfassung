@@ -100,6 +100,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | App an Excel angeglichen: Uhrzeit-Auswahl (Dateneingabe + Musterwoche) nur 11:00–17:00 (alte gespeicherte Zeiten bleiben erhalten); Mitarbeitername (Feld „Mitarbeiter (Nachname, Vorname)“, Überschrift „1. Stammdaten – Name“, blaues Feld mit orangem Rand, Hinweis ohne Komma, in der Sicherung); Excel-Farben: Eingabe gelb/orange, gesperrt/berechnet grau, Urlaub hellblau, Feiertag dunkelrot, Legende; Überschriften/Reiter wie in Excel („5. Auswertung“); `sw.js` v6; neuer Test `name-und-aussehen.test.js` | #14 |
 | 2026-11-27 | Excel: Spalte „Anmerkung“ (Dateneingabe F = Eingabe, I = gilt; Musterwoche D) mit Büro/Homeoffice/Teammentor*in/krank; „krank“ = geplante Zeit wird gutgeschrieben (Rechnung unverändert); verstecktes Blatt „Export“ für den Schichtplan. Neu: Schichtplan + MA-Tagesplan ohne Makros (Abschnitt 10), Mini-Paket zum Test beim Arbeitgeber; Werkzeuge `xlsx_spalten.py`, `plaene-erzeugen.py`, `plaene.test.py` | #15 |
 | 2026-11-27 | Nach Test des Nutzers (Excel): Eingabefelder der Dateneingabe mit Musterwoche vorbelegt (Formel, grau-kursiv; eigene Einträge fett, per Regel `ISFORMULA`), alle gesperrten/berechneten Felder grau (Gilt-Spalten mit grauer Schrift), Hilfsspalten ausgeblendet, Spalten für „Teammentor*in“ verbreitert (auch Schicht-/Tagesplan); Firmenname im Tagebuch durch „Arbeitgeber“ ersetzt | direkt auf `main` |
+| 2026-11-27 | Nach 2. Test (Excel): Eingabefelder schwarz und normal (Vorbelegung nicht mehr grau-kursiv, eigene Einträge weiter fett); gesperrte/berechnete Felder kräftiger grau `#D9D9D9` (vorher `#F2F2F2`, wirkte wie Weiß), graue Schrift `#595959` | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -108,7 +109,7 @@ Wichtige Stellen in `index.html`:
 - Vorbereitung auf ein neues Jahr (2028): Jahr umstellen, vorbelegten Urlaub pflegen, ggf. Übernahme des Übertrags.
 - **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2):
   - Spalte „Anmerkung“ (Büro/Homeoffice/Teammentor*in/krank) in Dateneingabe und Musterwoche (seit #15 in Excel).
-  - Gesperrte Felder grau, Gilt-Spalten unauffällig, eigene Einträge fett (seit 27.11.2026 in Excel). Die Vorbelegung mit der Musterwoche hat die App schon.
+  - Gesperrte Felder kräftig grau `#D9D9D9` (App nutzt noch `#F2F2F2`), Gilt-Spalten unauffällig, eigene Einträge fett (seit 27.11.2026 in Excel). Die Vorbelegung mit der Musterwoche hat die App schon.
   Nutzer hat am 27.11.2026 entschieden: App „später“ anpassen.
 - Schichtplan/Tagesplan: nach erfolgreichem Mini-Test beim Arbeitgeber das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
   Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
@@ -228,9 +229,11 @@ Wichtig:
   Spalten wurden mit `xlsx_spalten.py` eingefügt: Dateneingabe G = Gilt Start, H = Gilt Pause, J = Netto, K–M versteckte Helfer.
 - **Vorbelegung** (seit 27.11.2026): Dateneingabe D/E/F enthalten Formeln mit den Werten der Musterwoche (D: Feiertag oder
   `MusterStart`, E: `MusterPause`, F: `MusterAnm`; leer bei „kein Vertrag“). Der Mitarbeiter überschreibt per Klappmenü. Bedingte Formatierung
-  (Priorität 1/2, vor allen anderen Regeln): Formel → grau-kursiv, eigener Eintrag → fett (`_xlfn.ISFORMULA`, ab Excel 2013).
-  Wird ein Feld gelöscht, rechnet „Gilt“ trotzdem mit der Musterwoche. Zurücknehmen: grau-kursives Feld derselben Spalte kopieren.
-- **Farben**: Gelb = eintragen, Grau `#F2F2F2` = gesperrt/berechnet (Dateneingabe A–C, G–J; Gilt-Spalten mit grauer Schrift).
+  (Priorität 2, vor den anderen Regeln): eigener Eintrag (keine Formel) → fett (`_xlfn.ISFORMULA`, ab Excel 2013); vorbelegte Werte
+  schwarz und normal (Wunsch des Nutzers: Eingabefelder sollen nicht „gesperrt“ aussehen). Wird ein Feld gelöscht, rechnet „Gilt“
+  trotzdem mit der Musterwoche. Zurücknehmen: ein nicht fettes Feld derselben Spalte kopieren.
+- **Farben**: Gelb = eintragen, Grau `#D9D9D9` = gesperrt/berechnet (alle Blätter; Dateneingabe A–C, G–J; Gilt-Spalten mit Schrift `#595959`).
+  `#F2F2F2` ist auf Bildschirmen zu hell (wirkt weiß) – nicht mehr verwenden.
   Ausgeblendete Hilfsspalten: Stammdaten G/H, Musterwoche F–I, Dateneingabe K–M, Urlaub D, Auswertung F/G.
 - „krank“ bleibt als Bezeichnung (Entscheidung des Nutzers, 27.11.2026) – Hinweis: Kollegen können die Mitarbeiter-Dateien lesen.
 - **Blatt „Export“** (versteckt, geschützt): Quelle für den Schichtplan. B1 = Name (direkt `=Stammdaten!$B$3`, KEIN Namensbezug –
@@ -250,7 +253,7 @@ Tests für den Nutzer (Excel):
 - [ ] Excel am PC: Datei als „Mustermann, Max.xlsx“ speichern, neu öffnen → Stammdaten zeigt oben „1. Stammdaten – Mustermann, Max“ und das blaue Feld „Mitarbeiter“.
 - [ ] Ausscheiden: Jahres-Basis Juli–Dezember auf `0:00` → Stammdaten zeigt „Anteilig 6 von 12 Monaten: 15 Tage“, Urlaub 15 Tage / 117:00:00, Juli–Dezember in der Dateneingabe grau „kein Vertrag“.
 - [ ] Urlaubsblatt: Block oben rot, solange genommener ≠ zustehender Urlaub; grün, wenn genau gleich.
-- [ ] Vorbelegung: gelbe Felder der Dateneingabe zeigen grau-kursiv die Musterwoche; eigener Eintrag (z. B. Urlaub) erscheint fett.
+- [ ] Vorbelegung: gelbe Felder der Dateneingabe zeigen die Musterwoche (schwarz, normal); eigener Eintrag (z. B. Urlaub) erscheint fett; nicht änderbare Felder deutlich grau.
 - [ ] Anmerkung: Musterwoche Freitag „Homeoffice“ → in der Dateneingabe steht freitags „Homeoffice“ (gelb); einzelner Tag „Büro“ hebt es auf; „krank“ ändert die Stunden nicht.
 - [ ] Gleiche Eingaben wie in der App → gleiche Jahresbilanz (stichprobenartig vergleichen).
 
