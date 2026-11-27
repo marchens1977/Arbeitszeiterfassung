@@ -329,6 +329,10 @@ Wichtig für Excel: Von Claude erzeugte Dateien haben keine gespeicherten Werte.
 Stundenzettel aktualisieren+speichern → Inhaltsverzeichnis aktualisieren. Liefert eine Verknüpfung trotzdem Fehler, zeigen die Dateien jetzt
 „keine Vorgabe“/leer statt `#BEZUG!`.
 
+**Versand per E-Mail:** immer an die Arbeits-Adresse des Nutzers (wie bisher, steht im Gmail-Postausgang – NICHT hier eintragen), als
+einzelne `.xlsx`-Dateien, **keine ZIP-Dateien** (Wunsch des Nutzers). Grenzen des Gmail-Werkzeugs: höchstens **10 Anhänge** und ca. **3 MB**
+je E-Mail → großes Paket = 9 E-Mails (1: Schicht-/Tagesplan, 2–5: Eingabe-Dateien, 6–9: Inhaltsverzeichnis + Stundenzettel).
+
 Ältere Übergabe:
 
 - **Mini-Paket V6** (alle Änderungen bis hier, 3 Plätze, 1 Woche, 5 Tage) ist per E-Mail beim Nutzer; er testet es in der NÄCHSTEN Sitzung
