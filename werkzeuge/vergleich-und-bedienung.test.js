@@ -49,12 +49,12 @@ async function run(file, preload) {
   const n = await run('new.html', sample); const p = n.page;
   await p.evaluate(() => showTab(3)); await p.click('#mainBtn3');
   console.log('\nbtn class editing:', await p.$eval('#mainBtn3', e => e.className));
-  await p.selectOption('#row_2027-01-06 select >> nth=0', '07:00');
+  await p.selectOption('#row_2027-01-06 select >> nth=0', '12:00');
   await p.selectOption('#row_2027-01-06 select >> nth=1', '60');
   console.log('row after change:', await text(p, '#row_2027-01-06'));
   console.log('jan header:', await text(p, '#mh_0'));
   await p.click('#mainBtn3'); console.log('btn class saved:', await p.$eval('#mainBtn3', e => e.className));
-  console.log('persisted:', await p.evaluate(() => JSON.parse(localStorage.getItem('arbeitszeit_hessen_2027_v2')).days['2027-01-06']));
+  console.log('persisted (erwartet 12:00 / 60):', await p.evaluate(() => JSON.parse(localStorage.getItem('arbeitszeit_hessen_2027_v2')).days['2027-01-06']));
   // Urlaubsgrenze
   await p.evaluate(() => { st.vac = '1'; save(); }); await p.click('#mainBtn3');
   p.once('dialog', d => { console.log('dialog:', d.message()); d.accept(); });
@@ -78,7 +78,8 @@ async function run(file, preload) {
   console.log('after import vac (erwartet 30):', await p.$eval('#vac', e=>e.value));
   // Musterwoche: kein Urlaub wählbar
   await p.evaluate(() => showTab(2)); await p.click('#mainBtn2');
-  console.log('pattern options:', await p.$$eval('#patternBody tr:first-child select:first-child option', os => os.slice(0,3).map(o=>o.value).join(',')));
+  console.log('Tages-Uhrzeiten (erwartet 11:00 … 17:00):', await p.evaluate(() => timeList[0][0] + ' … ' + timeList[timeList.length - 1][0]));
+  console.log('pattern options (erwartet X,11:00,11:15):', await p.$$eval('#patternBody tr:first-child select:first-child option', os => os.slice(0,3).map(o=>o.value).join(',')));
   console.log('errors:', n.out.errors);
   await n.browser.close();
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1,7 +1,7 @@
 /* Offline-Helfer (Service Worker):
    Speichert die App-Dateien, damit die App auch ohne Internet startet.
    Bei jeder Änderung an der App die VERSION hochzählen, damit alle Geräte die neue Fassung bekommen. */
-const VERSION = 'arbeitszeit-v5';
+const VERSION = 'arbeitszeit-v6';
 const FILES = [
   './',
   './index.html',

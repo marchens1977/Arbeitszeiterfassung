@@ -23,12 +23,14 @@ h3{font-size:.95rem;margin:16px 0 6px;color:#002D72;border-left:4px solid #FF591
 label{display:block;margin-top:10px;font-size:.85rem;color:#555}
 input,select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #d5d9e0;border-radius:6px;font-size:.95rem;background:#fff;margin-top:2px}
 input:focus,select:focus,textarea:focus{outline:2px solid #FF5910;outline-offset:0;border-color:#FF5910}
-input:disabled,select:disabled{background:#f8fafc;color:#64748b;cursor:not-allowed}
+/* Wie in der Excel-Datei: Gelb mit orangem Rand = hier eintragen, Grau = gesperrt/berechnet */
+input:not(:disabled):not([type=file]):not([type=checkbox]),select:not(:disabled),textarea:not(:disabled){background:#FFF2CC;border-color:#FF5910}
+input:disabled,select:disabled{background:#F2F2F2;border-color:#BFBFBF;color:#444;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
 td,th{padding:6px 4px;border-bottom:1px solid #e2e8f0;text-align:left}
 td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
-.sum td{font-weight:700;background:#f8fafc}
-.box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;margin-top:10px;line-height:1.7}
+.sum td{font-weight:700;background:#F2F2F2}
+.box{background:#F2F2F2;border:1px solid #BFBFBF;border-radius:6px;padding:10px;margin-top:10px;line-height:1.7}
 .r{text-align:right}
 .note{font-size:.8rem;color:#64748b;margin:6px 0 0}
 .future-row{background-color:#fff0e8 !important}
@@ -47,7 +49,13 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 .btn-sm{width:auto;padding:6px 14px;font-size:.85rem;margin-top:0;}
 .month-header-row td{background:#002D72;font-weight:700;color:#fff;padding:8px 4px;}
 .month-header-row td span{float:right;font-weight:600;color:#ffc4a8}
-.holiday{font-size:0.75rem;color:#dc2626}
+.holiday{font-size:0.75rem;color:#C00000}
+.vac-row td:nth-child(n+2){background:#DDEBF7}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.75rem;color:#555;margin:6px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px}
+.emp-banner{background:#002D72;color:#fff;border:2px solid #FF5910;border-radius:8px;padding:10px 12px;font-size:1.2rem;font-weight:700;margin:6px 0 4px}
+.emp-banner small{display:block;font-size:.72rem;font-weight:400;color:#dbe4f3}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .actions .btn{flex:1;min-width:140px}
 .pos{color:#15803d}.neg{color:#b91c1c}
@@ -55,7 +63,7 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 .vac-ok .mini-card strong{color:#15803d}
 .vac-diff .mini-card{background:#fee2e2;border-color:#fca5a5;border-bottom-color:#b91c1c}
 .vac-diff .mini-card strong{color:#b91c1c}
-.no-contract td{color:#9e9e9e;font-style:italic;background:#ededed}
+.no-contract td{color:#9e9e9e;font-style:italic;background:#EDEDED}
 </style>
 </head>
 <body>
@@ -64,7 +72,7 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
   <button type="button" class="tab" onclick="showTab(1)">2. Urlaub</button>
   <button type="button" class="tab" onclick="showTab(2)">3. Musterwoche</button>
   <button type="button" class="tab" onclick="showTab(3)">4. Dateneingabe</button>
-  <button type="button" class="tab" onclick="showTab(4)">5. Ausgabe</button>
+  <button type="button" class="tab" onclick="showTab(4)">5. Auswertung</button>
 </div>
 
 <div class="pg active" id="pg0">
@@ -72,7 +80,11 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <div class="top-action-bar">
       <button type="button" id="mainBtn0" class="btn btn-primary btn-sm" onclick="toggleEdit0()">Ändern</button>
     </div>
-    <h2>Stammdaten &amp; Monatliche vertragliche Arbeitszeit <span class="yr"></span></h2>
+    <h2 id="stammTitle">1. Stammdaten</h2>
+    <div class="emp-banner" id="empBanner"></div>
+    <label for="empName">Mitarbeiter (Nachname, Vorname)</label>
+    <input id="empName" type="text" placeholder="z. B. Mustermann, Max" autocomplete="name" disabled>
+    <p class="note" id="empHint"></p>
     <p class="note">Erfasse hier den zustehenden Urlaubsanspruch, den Übertrag aus dem Vorjahr, Sondervereinbarungen sowie die monatliche vertragliche Arbeitszeit-Basis.</p>
 
     <label for="vac">Urlaubsanspruch volles Jahr (Tage)</label>
@@ -157,8 +169,8 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 
 <div class="pg" id="pg1">
   <div class="card">
-    <h2>Urlaubsübersicht &amp; Abgleich</h2>
-    <p class="note">Übersicht über den zustehenden Urlaub, genommene Tage und Stunden sowie den Saldo.</p>
+    <h2>2. Urlaubsübersicht &amp; Abgleich</h2>
+    <p class="note">Übersicht über den zustehenden Urlaub, genommene Tage und Stunden sowie den Rest. Urlaub trägst du in der Dateneingabe ein (Auswahl „Urlaub“). Rot = genommener Urlaub weicht vom zustehenden ab, Grün = genau der zustehende Urlaub ist eingetragen.</p>
     <div class="grid-cards" id="vacCards"></div>
     <table>
       <thead><tr><th>Monat</th><th class="r">Genommene Tage</th><th class="r">Genommene Stunden</th></tr></thead>
@@ -173,7 +185,7 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <div class="top-action-bar">
       <button type="button" id="mainBtn2" class="btn btn-primary btn-sm" onclick="toggleEdit2()">Ändern</button>
     </div>
-    <h2>Musterwoche (Montag bis Freitag)</h2>
+    <h2>3. Musterwoche (Montag bis Freitag)</h2>
     <p class="note">Ende ist fix um 19:00 Uhr. Die Musterwoche gilt für alle Tage, die du in der Dateneingabe nicht manuell geändert hast. Urlaub und Feiertage trägst du in der Dateneingabe ein.</p>
     <table>
       <thead><tr><th>Wochentag</th><th>Start / Status</th><th>Pause</th><th class="r">Netto (Richtwert)</th></tr></thead>
@@ -189,8 +201,9 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <div class="top-action-bar">
       <button type="button" id="mainBtn3" class="btn btn-primary btn-sm" onclick="toggleEdit3()">Ändern</button>
     </div>
-    <h2>Dateneingabe <span class="yr"></span></h2>
+    <h2>4. Dateneingabe <span class="yr"></span></h2>
     <p class="note" style="margin-bottom:10px;">Hessische Feiertage und der automatische Urlaub sind vorbelegt. Erfassung erfolgt über Start und Pause für das gesamte Jahr. Hellorange hinterlegte Tage liegen in der Zukunft.</p>
+    <div class="legend"><span><i style="background:#FFF2CC;border:1px solid #FF5910"></i>eintragen (nach „Ändern“)</span><span><i style="background:#fff0e8"></i>Zukunft</span><span><i style="background:#DDEBF7"></i>Urlaub</span><span><i style="background:#EDEDED"></i>kein Vertrag</span><span style="color:#C00000">Rot = Feiertag</span></div>
 
     <div class="month-summary-box" id="monthSummaryBox"></div>
 
@@ -206,7 +219,7 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <div class="top-action-bar">
       <button type="button" id="mainBtn4" class="btn btn-primary btn-sm" onclick="toggleEdit4()">Ändern</button>
     </div>
-    <h2>Auswertung &amp; Jahresbilanz</h2>
+    <h2>5. Auswertung &amp; Jahresbilanz <span class="yr"></span></h2>
     <p class="note">Hier siehst du die aus deiner Dateneingabe ermittelten Monatswerte und kannst daneben die Werte gemäß Stundenabrechnung 057 eintragen. Leere Felder übernehmen den Plan-Wert.</p>
     <table>
       <thead><tr><th>Monat</th><th class="r">Plan (Dateneingabe)</th><th class="r">Gemäß Stundenabrechnung 057</th></tr></thead>
@@ -386,6 +399,7 @@ for (let d = new Date(Y, 0, 1); d.getFullYear() === Y; d.setDate(d.getDate() + 1
 
 function defaultState() {
   return {
+    name: '',
     vac: '30',
     ct: 'plus',
     cv: '00:00:00',
@@ -428,6 +442,7 @@ function sanitizeState(loaded) {
   if (!s.days || typeof s.days !== 'object' || Array.isArray(s.days)) s.days = {};
   if (!s.monthlyActual || typeof s.monthlyActual !== 'object' || Array.isArray(s.monthlyActual)) s.monthlyActual = {};
   if (!s.pattern || typeof s.pattern !== 'object' || Array.isArray(s.pattern)) s.pattern = null;
+  s.name = typeof s.name === 'string' ? s.name.trim() : '';
   s.vac = s.vac == null ? '30' : String(s.vac);
   s.ct = s.ct === 'minus' ? 'minus' : 'plus';
   s.cv = normHMS(s.cv == null ? '00:00:00' : s.cv);
@@ -558,10 +573,11 @@ function toggleEdit0() {
   editing0 = !editing0;
   setEditButton($('mainBtn0'), editing0);
   for (let i = 0; i < 12; i++) $(`m_annual_${i}`).disabled = !editing0;
-  ['vac', 'ct', 'cv', 'agreedOt', 'unpaidVac'].forEach(id => { $(id).disabled = !editing0; });
+  ['empName', 'vac', 'ct', 'cv', 'agreedOt', 'unpaidVac'].forEach(id => { $(id).disabled = !editing0; });
 
   if (!editing0) {
     for (let i = 0; i < 12; i++) st.monthlyAnnual[i] = $(`m_annual_${i}`).value.trim();
+    st.name = $('empName').value.trim().replace(/\s*,\s*/, ', ');
     st.vac = String(Math.max(0, num($('vac').value)));
     st.ct = $('ct').value;
     st.cv = normHMS($('cv').value);
@@ -574,7 +590,17 @@ function toggleEdit0() {
   }
 }
 
+/* Mitarbeitername groß anzeigen (wie in der Excel-Datei: Überschrift + blaues Feld) */
+function showEmployee() {
+  const n = st.name || '';
+  $('stammTitle').textContent = '1. Stammdaten' + (n ? ' – ' + n : '');
+  $('empBanner').innerHTML = n ? `<small>Mitarbeiter</small>${esc(n)}` : '<small>Mitarbeiter</small>– bitte unter „Ändern“ eintragen –';
+  $('empHint').textContent = !n ? '' : (n.includes(', ') ? '' : 'Bitte als „Nachname, Vorname“ eintragen, z. B. „Mustermann, Max“.');
+}
+
 function fillMasterInputs() {
+  $('empName').value = st.name;
+  showEmployee();
   $('vac').value = st.vac;
   $('ct').value = st.ct;
   $('cv').value = st.cv;
@@ -657,7 +683,7 @@ function renderVacationTab() {
 
 /* --- Auswahllisten --- */
 const timeList = [];
-for (let m = 5 * 60; m <= 18 * 60; m += 15) {
+for (let m = 11 * 60; m <= 17 * 60; m += 15) {   // wie in der Excel-Datei: 11:00 bis 17:00
   const t = `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
   timeList.push([t, t]);
 }
@@ -728,7 +754,7 @@ function dayRowHtml(d) {
   }
   const dat = getDayData(d);
   const planSec = calcNetSec(dat.s, dat.p, d.m);
-  const rowClass = d.dateObj >= todayStart ? 'future-row' : '';
+  const rowClass = (d.dateObj >= todayStart ? 'future-row' : '') + (dat.s === 'U' ? ' vac-row' : '');
   let dayLabel = `${WD[d.w]} ${d.dd}.${pad(d.m + 1)}.`;
   if (holidays[d.k]) dayLabel += ` <span class="holiday">(${holidays[d.k]})</span>`;
 

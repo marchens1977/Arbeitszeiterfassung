@@ -71,6 +71,10 @@ Wichtige Stellen in `index.html`:
   Mets-Orange `#FF5910` (aktiver Reiter, Knopf „Speichern“ mit blauer Schrift, Akzentlinien, Uhrzeiger im Symbol).
   Zukünftige Tage sind hellorange (`#fff0e8`). Grün/Rot bleiben für Plus/Minus und Feiertage, weil sie eine Bedeutung haben.
   Nach Änderung am Symbol: `node werkzeuge/symbole-erzeugen.js` (Hintergrundfarbe steht dort fest drin).
+- **Farben wie in der Excel-Datei** (seit #14): Eingabefeld im „Ändern“-Modus gelb `#FFF2CC` mit orangem Rand `#FF5910`;
+  gesperrte/berechnete Felder und Kästen grau `#F2F2F2` (Rand `#BFBFBF`); Urlaubstag hellblau `#DDEBF7`; „kein Vertrag“ `#EDEDED`;
+  Feiertag dunkelrot `#C00000`; Urlaub-Abgleich grün/rot. Mitarbeitername: `st.name`, Anzeige `showEmployee()`.
+- Uhrzeit-Auswahl in Dateneingabe und Musterwoche: 11:00–17:00 im 15-Minuten-Takt (`timeList`), wie in Excel.
 
 ## 3. Verlauf
 
@@ -93,16 +97,16 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Excel (Rechenmodell auf Wunsch erweitert): Ausscheiden unter dem Jahr – Monate mit Jahres-Basis 0 zählen nicht („kein Vertrag“, grau), Urlaub anteilig (Anspruch × Vertragsmonate ÷ 12, gesetzlich gerundet), Urlaubsstunden mit Ø Regel-Tag nur der Vertragsmonate; Urlaubsblatt: Block rot/grün; `excel-pruefen.py` mit `--ab-monat`, `--anspruch`, `--urlaub` | direkt auf `main` |
 | 2026-11-27 | App: dieselbe Logik wie Excel – Ausscheiden unter dem Jahr (Monate mit Jahres-Basis 0 = „kein Vertrag“, grau), anteiliger Urlaub gesetzlich gerundet, Hinweis unter „Urlaubsanspruch volles Jahr“, Urlaubs-Karten grün/rot; `sw.js` v5; neuer Test `ausscheiden.test.js` (vergleicht mit den Excel-Werten) | #12 |
 | 2026-11-27 | Grundregel ins Tagebuch: Excel-Datei ist Vorlage, App zieht Logik und Aussehen exakt gleich nach; keine Synchronisation; Liste der noch offenen Unterschiede | #13 |
+| 2026-11-27 | App an Excel angeglichen: Uhrzeit-Auswahl (Dateneingabe + Musterwoche) nur 11:00–17:00 (alte gespeicherte Zeiten bleiben erhalten); Mitarbeitername (Feld „Mitarbeiter (Nachname, Vorname)“, Überschrift „1. Stammdaten – Name“, blaues Feld mit orangem Rand, Hinweis ohne Komma, in der Sicherung); Excel-Farben: Eingabe gelb/orange, gesperrt/berechnet grau, Urlaub hellblau, Feiertag dunkelrot, Legende; Überschriften/Reiter wie in Excel („5. Auswertung“); `sw.js` v6; neuer Test `name-und-aussehen.test.js` | #14 |
 
 ## 4. Offene Ideen / nächste Schritte
 
 - Vorbelegter Urlaub: Der 26.03.2027 (Karfreitag) war als Urlaub eingetragen und zählt nicht; dadurch sind nur
   29 statt 30 Tage vorbelegt. Nutzer kann einen Tag nachtragen – oder die Vorbelegung wird angepasst.
 - Vorbereitung auf ein neues Jahr (2028): Jahr umstellen, vorbelegten Urlaub pflegen, ggf. Übernahme des Übertrags.
-- **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2):
-  - Klappmenüs Arbeitsbeginn (Dateneingabe und Musterwoche): App 05:00–18:00, Excel 11:00–17:00.
-  - Mitarbeitername: Excel liest ihn aus dem Dateinamen und zeigt ihn groß in den Stammdaten; die App hat kein Namensfeld.
-  - Aussehen: Excel nutzt Gelb für Eingabefelder und Grau für Rechenfelder, die App ihre Mets-Farben. Bezeichnungen/Farben angleichen, soweit sinnvoll.
+- **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2): zurzeit nichts (Stand #14).
+  Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
+  Excel hat zusätzlich das Blatt „Anleitung“, die App erklärt in kurzen Hinweistexten.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
   von Hand nachgezogen werden (oder bewusst nicht). Ein automatischer Vergleich App ↔ Excel fehlt noch.
 - Es gibt keinen eigenen Reiter „Einstellungen“; App-Einstellungen (Installieren, Updates, Sicherung) stehen im Reiter „1. Stammdaten“.
@@ -144,6 +148,7 @@ Vorhandene Werkzeuge (benötigen Node.js und Playwright mit Chromium; in der Cla
 | `node werkzeuge/sicherung.test.js` | Sicherung als Text: kopieren, Daten ändern, wiederherstellen, ungültigen Text abweisen; macht einen Handy-Screenshot |
 | `node werkzeuge/updates.test.js` | Kopiert die App in einen Testordner, startet dort einen Webserver und „veröffentlicht“ neue Versionen: prüft Versionsanzeige, Knopf „Jetzt nach Updates suchen“, automatisches Neuladen, Warten während einer Bearbeitung, Daten bleiben erhalten, automatische Suche ohne Knopf |
 | `node werkzeuge/ausscheiden.test.js` | Ausscheiden unter dem Jahr in der App: anteiliger Urlaub (6/7/5/1 Monate, 30 und 31 Tage), Urlaubsstunden und Soll **gegen die Werte der Excel-Datei**, „kein Vertrag“ in der Dateneingabe, Urlaubs-Karten rot/grün, Urlaubsgrenze. Endet mit „ERGEBNIS: alles in Ordnung“. |
+| `node werkzeuge/name-und-aussehen.test.js` | Angleichung an Excel: Mitarbeitername (Hinweis ohne Komma, große Anzeige, bleibt nach Neuladen, steckt in der Sicherung), Farben gelb/grau/hellblau, Uhrzeiten 11:00–17:00, Reiter-/Überschriften; macht Handy-Screenshots. Endet mit „ERGEBNIS: alles in Ordnung“. |
 | `node werkzeuge/offline-app.test.js` | Startet einen lokalen Webserver und prüft Manifest, Symbole, Offline-Helfer und den Start ohne Internet |
 | `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT] [--anspruch TAGE] [--ab-monat N] [--urlaub K]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. `--ab-monat 7` = Ausscheiden ab Juli (Erwartung bei 30 Tagen: 15 Tage, 117:00:00), `--urlaub 15` trägt 15 Urlaubstage im Januar ein. |
 | `node werkzeuge/symbole-erzeugen.js` | Kein Test: erzeugt aus `icons/icon.svg` alle PNG-Symbole neu (nur nach Änderung am Symbol) |
@@ -161,6 +166,8 @@ Tests für den Nutzer (kann Claude nicht selbst prüfen):
   Das neue Symbol auf dem Startbildschirm kann erst nach Tagen oder nach Neu-Installation erscheinen.
 - Ausscheiden in der App: Jahres-Basis Juli–Dezember auf 0 → unter „Urlaubsanspruch volles Jahr“ steht „Anteilig 6 von 12 Monaten: 15 Tage“;
   Dateneingabe Juli–Dezember grau „kein Vertrag“; Reiter Urlaub rot, bei genau 15 eingetragenen Tagen grün.
+- Mitarbeitername in der App: Stammdaten → „Ändern“ → „Mustermann, Max“ eintragen → „Speichern“: Überschrift und blaues Feld zeigen den Namen.
+  Uhrzeit-Auswahl zeigt nur 11:00–17:00; Eingabefelder im „Ändern“-Modus gelb, sonst grau; Urlaubstage hellblau.
 - Updates: Unter Stammdaten → „App-Updates“ steht eine Version (z. B. v4); „Jetzt nach Updates suchen“ meldet
   „neueste Version“. Nach dem nächsten Update öffnet sich die App kurz neu und zeigt „gerade aktualisiert“.
 
