@@ -379,6 +379,12 @@ je E-Mail → großes Paket = 9 E-Mails (1: Schicht-/Tagesplan, 2–5: Eingabe-D
 - **Umbenennen erlaubt:** Schichtplan, MA-Tagesplan und Inhaltsverzeichnis (auf sie zeigt keine Verknüpfung). Wunsch: „001 MA-Tagesplan“,
   „002 Schichtplan“ (ggf. „000 Inhaltsverzeichnis“), damit sie im Explorer oben stehen – beim Produktivpaket gleich so erzeugen (nachfragen).
   NICHT umbenennen: Eingabe-Dateien, Stundenzettel, die Ordner.
+- **Echte Namen (Frage des Nutzers, 27.11.2026):** Der Nutzer will KEINE echten Namen an Claude/Anthropic geben. Plan: Produktivpaket mit
+  Platzhaltern „Mustermann, Max 01…35“ (gelten als freier Platz, erscheinen nicht im Plan); der Nutzer benennt selbst um. Empfohlener Weg
+  (noch in Excel zu testen): Schichtplan, MA-Tagesplan und den passenden Stundenzettel öffnen, dann die Platzhalter-Eingabe-Datei öffnen und
+  per **„Speichern unter“** als „Nachname, Vorname.xlsx“ speichern → Excel soll die Verknüpfungen in den geöffneten Dateien automatisch
+  mitziehen → diese speichern, alte Platzhalter-Datei löschen. Alternative: im Explorer umbenennen und in Stundenzettel, Schichtplan und
+  Tagesplan je „Workbook Links → … → Quelle ändern“. Beides beim nächsten Test mit einer Testperson ausprobieren und eine Kurzanleitung schreiben.
 - **Ordner verschieben:** nur beide zusammen und mit gleicher Anordnung zueinander; danach in einer Eingabe-Datei „Links bearbeiten → Status“ prüfen.
 
 Ältere Übergabe:
