@@ -43,7 +43,7 @@ st, ur, au = wb['Stammdaten'], wb['Urlaub'], wb['Auswertung']
 print('Mitarbeiter (aus Dateiname, hier immer „ein“):', st['B3'].value, '|', st['C3'].value)
 print('Stammdaten C5:', st['C5'].value, '| Hilfswerte G35-G39:', [st[f'G{r}'].value for r in range(35, 40)])
 de = wb['Dateneingabe']
-print('Dateneingabe Juli (erste Zeile):', next(([de.cell(r,c).value for c in (1,6,9)] for r in range(6,268) if de.cell(r,10).value == 7), None))
+print('Dateneingabe Juli (erste Zeile):', next(([de.cell(r,c).value for c in (1,7,11)] for r in range(6,268) if de.cell(r,12).value == 7), None))
 print('Urlaub C6:', ur['C6'].value)
 print('Stammdaten A28:', st['A28'].value)
 for r in range(27, 33):
