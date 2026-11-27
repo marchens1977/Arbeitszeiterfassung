@@ -18,6 +18,7 @@ Die App ist als installierbare App (PWA) eingerichtet und läuft auch offline.
 | `manifest.json` | Beschreibung für die Installation als App (Name, Symbol, Farben) |
 | `sw.js` | Offline-Helfer (Service Worker): speichert die App-Dateien; „Netz zuerst, sonst Kopie“ |
 | `icons/` | App-Symbol (blaue Uhr) als SVG und PNG (192, 512, 512 maskable, 180 Apple) |
+| `excel/Arbeitszeiterfassung.xlsx` | Excel-Version der App (eigenständig, siehe Abschnitt 9) |
 | `werkzeuge/` | Automatische Prüfungen (Tests) und Hilfsprogramme, siehe Abschnitt 8 |
 | `CLAUDE.md` | Dieses Tagebuch |
 
@@ -63,12 +64,15 @@ Wichtige Stellen in `index.html`:
 | 2026-11-18 | Regel „Hilfsprogramme und Tests gehören ins Projekt“; vorhandene Prüfungen aus dem Arbeitsbereich nach `werkzeuge/` übernommen | #6 |
 | 2026-11-19 | Farben im Stil der New York Mets: Blau `#002D72`, Orange `#FF5910` (Reiter, Knöpfe, Überschriften, Karten, Monatszeilen, App-Symbol, Statusleiste); Rechnungen unverändert | #7 |
 | 2026-11-19 | Automatische App-Updates: Kasten „App-Updates“ im Reiter Stammdaten (Version, letzte Suche, Knopf „Jetzt nach Updates suchen“); sucht beim Start, beim Zurückkehren und stündlich, installiert selbst, wartet während einer Bearbeitung; Test `updates.test.js`; Sicherungs-Test wartet jetzt auf das Kopieren | #8 |
+| 2026-11-27 | Excel-Version `excel/Arbeitszeiterfassung.xlsx` ins Projekt übernommen und im Tagebuch beschrieben (Abschnitt 9) | #9 |
 
 ## 4. Offene Ideen / nächste Schritte
 
 - Vorbelegter Urlaub: Der 26.03.2027 (Karfreitag) war als Urlaub eingetragen und zählt nicht; dadurch sind nur
   29 statt 30 Tage vorbelegt. Nutzer kann einen Tag nachtragen – oder die Vorbelegung wird angepasst.
 - Vorbereitung auf ein neues Jahr (2028): Jahr umstellen, vorbelegten Urlaub pflegen, ggf. Übernahme des Übertrags.
+- Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
+  von Hand nachgezogen werden (oder bewusst nicht). Ein automatischer Vergleich App ↔ Excel fehlt noch.
 - Es gibt keinen eigenen Reiter „Einstellungen“; App-Einstellungen (Installieren, Updates, Sicherung) stehen im Reiter „1. Stammdaten“.
   Falls sie dort zu viel werden: eigenen Reiter „Einstellungen“ anlegen.
 
@@ -123,3 +127,38 @@ Tests für den Nutzer (kann Claude nicht selbst prüfen):
   Das neue Symbol auf dem Startbildschirm kann erst nach Tagen oder nach Neu-Installation erscheinen.
 - Updates: Unter Stammdaten → „App-Updates“ steht eine Version (z. B. v4); „Jetzt nach Updates suchen“ meldet
   „neueste Version“. Nach dem nächsten Update öffnet sich die App kurz neu und zeigt „gerade aktualisiert“.
+
+## 9. Excel-Version
+
+**Datei:** `excel/Arbeitszeiterfassung.xlsx` (am 23.11.2026 von Claude erstellt – in welcher Sitzung, ist nicht mehr bekannt;
+der Nutzer hat sie am 27.11.2026 vom Handy hochgeladen). Sie ist eine **leere Vorlage ohne persönliche Daten** und darf deshalb
+im öffentlichen Repository liegen. Eigene ausgefüllte Kopien gehören **nicht** ins Repository.
+
+Zweck: dieselbe Rechnung wie die App, aber als Excel-Tabelle (ohne Internet, ohne Browser). Sie ist unabhängig von der App –
+Daten werden **nicht** zwischen App und Excel ausgetauscht.
+
+Aufbau (Blätter):
+
+| Blatt | Inhalt |
+|---|---|
+| Anleitung | Bedienung, Farben (Gelb = eintragen, Grau = rechnet Excel), Rechenregeln, Sichern, neues Jahr |
+| Stammdaten | Jahr (2027), Urlaubsanspruch, Übertrag (Plus/Minus), vereinbarte Überstunden, unbezahlter Urlaub, Jahres-Basis je Monat |
+| Musterwoche | Mo–Fr Start/„Frei“ und Pause, Ende fix 19:00 |
+| Dateneingabe | alle Werktage des Jahres, hessische Feiertage vorbelegt, Klappmenü für Start/Urlaub/Feiertag/Frei |
+| Urlaub | Anspruch, genommen, Rest, je Monat; Warnung bei zu viel Urlaub |
+| Auswertung | Monatswerte Plan, Eingabe „Stundenabrechnung 057“, Soll/Ist/Differenz |
+| Listen | Hilfsblatt: Klappmenü-Werte, Osterberechnung (Gauß), Feiertage |
+
+Wichtig:
+- Gleiches Rechenmodell wie die App (Regel-Tag = Jahresstunden / 52 / 5; Urlaub vom Soll abgezogen; Feiertage zählen auf das Ist).
+- Zeiten als Stunden:Minuten eingeben (`12:30`), nicht als Kommazahl.
+- Blätter sind **ohne Passwort** geschützt (nur gegen versehentliches Löschen von Formeln), keine Makros.
+- Für ein neues Jahr: Kopie speichern, Jahr in „Stammdaten“ ändern, alte Eingaben löschen.
+- Bei Änderungen an der Datei: mit `openpyxl` (Python) bearbeiten, danach die Formeln mit LibreOffice neu berechnen lassen
+  und die Ergebnisse mit der App vergleichen (gleiche Eingaben → gleiche Zahlen).
+- Download-Link (nach dem Merge): `https://marchens1977.github.io/Arbeitszeiterfassung/excel/Arbeitszeiterfassung.xlsx`
+
+Tests für den Nutzer (Excel):
+- [ ] Datei über den Download-Link am Handy öffnen (z. B. Excel-App oder Google Tabellen).
+- [ ] In der Musterwoche einen Wert ändern → Dateneingabe und Auswertung ändern sich mit.
+- [ ] Gleiche Eingaben wie in der App → gleiche Jahresbilanz (stichprobenartig vergleichen).
