@@ -29,6 +29,7 @@ subprocess.run(['soffice', '--headless', '--calc', '--convert-to', 'xlsx', '--ou
                check=True, capture_output=True)
 wb = openpyxl.load_workbook(os.path.join(aus, 'ein.xlsx'), data_only=True)
 st, ur, au = wb['Stammdaten'], wb['Urlaub'], wb['Auswertung']
+print('Mitarbeiter (aus Dateiname, hier immer „ein“):', st['B3'].value, '|', st['C3'].value)
 print('Stammdaten A28:', st['A28'].value)
 for r in range(27, 33):
     print(f'  {st.cell(r,1).value}: {st.cell(r,2).value}  (Sek {st.cell(r,7).value})')
