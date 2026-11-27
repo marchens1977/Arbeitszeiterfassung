@@ -8,6 +8,8 @@ Ablauf (bildet Excel nach), Ordner „Schichtplanung“ (offen) und „Steuerung
      Excel liest bei geschlossenen Dateien die GESPEICHERTEN Werte) → prüfen
   5. Stundenzettel aktualisieren → muss genauso rechnen wie die Hauptvorlage mit denselben Eingaben; 057-Wert eintragen
   6. Eingabe-Dateien holen die Vorgaben (Reststunden = Stundenzettel, Urlaubswarnung)
+  1b. Verknüpfung liefert Fehler (Quelle nie gespeichert/nicht erreichbar) → kein #BEZUG!, sondern „keine Vorgabe“
+  5b. Inhaltsverzeichnis im Ordner Steuerung: Nr. → Name aus dem Stundenzettel
   7. Vertragsende: Ben ohne Vertrag im Januar → Eingabe „kein Vertrag“ → Schichtplan ohne Zeiten
 Warum nicht die echte Verknüpfung in LibreOffice? LibreOffice rechnet verknüpfte Dateien beim Aktualisieren
 neu, verwechselt dabei Werte zwischen mehreren Dateien und stürzt teils ab – Excel liest nur gespeicherte Werte.
@@ -104,6 +106,43 @@ def aktualisieren_wie_excel(datei):
     wb._external_links = []
     wb.save(pfad(datei))
 
+
+def verknuepfung_fehler(datei, ziel):
+    """Kopie von datei, in der jede Verknüpfung einen Fehler liefert (wie Excel mit #BEZUG!, wenn die Quelle
+    noch nie gespeichert wurde oder nicht erreichbar ist)."""
+    wb = openpyxl.load_workbook(pfad(datei))
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for c in row:
+                if isinstance(c.value, str) and EXT.match(c.value): c.value = '=1/0'
+    wb._external_links = []
+    wb.save(pfad(ziel))
+
+
+# 1b. Verknüpfung liefert Fehler (Beobachtung des Nutzers: ganze Dateneingabe #BEZUG!) → Dateien rechnen trotzdem
+print('--- Verknüpfung liefert Fehler')
+verknuepfung_fehler(f'{OFFEN}/{MA[0]}.xlsx', 'fehler-eingabe.xlsx')
+d = oeffnen('fehler-eingabe.xlsx'); d.calculateAll()
+pruefe('Eingabe: Start vorbelegt', wert(d, 'Dateneingabe', 'D7'), '11:00')
+pruefe('Eingabe: Pause vorbelegt', wert(d, 'Dateneingabe', 'E7'), '30 Min')
+pruefe('Eingabe: Gilt Start', wert(d, 'Dateneingabe', 'G7'), '11:00')
+pruefe('Eingabe: Hinweis statt Fehler', wert(d, 'Dateneingabe', 'H3'), 'noch keine Vorgabe vom Steuerer')
+pruefe('Eingabe: Titel mit Jahr', wert(d, 'Dateneingabe', 'A1')[:17], 'Dateneingabe 2027')
+alle = d.Sheets.getByName('Dateneingabe').getCellRangeByName('A1:N267').getDataArray()
+pruefe('Eingabe: keine Fehlerwerte', sum(1 for z in alle for v in z if isinstance(v, str) and (v.startswith('#') or v.startswith('Err:'))), 0)
+d.close(True)
+verknuepfung_fehler(f'{PRIVAT}/Stundenzettel 01.xlsx', 'fehler-sz.xlsx')
+d = oeffnen('fehler-sz.xlsx'); d.calculateAll()
+pruefe('Stundenzettel: Name leer statt Fehler', wert(d, 'Stammdaten', 'B3'), '')
+pruefe('Stundenzettel: Tagesliste leer statt Fehler', wert(d, 'Tagesliste', 'D7') + wert(d, 'Tagesliste', 'E7') + wert(d, 'Tagesliste', 'F7'), '')
+d.close(True)
+for datei, blatt, zelle, soll_ in ((f'{OFFEN}/Schichtplan.xlsx', 'Mitarbeiter', 'C4', ''),
+                                    (f'{PRIVAT}/Inhaltsverzeichnis.xlsx', 'Inhaltsverzeichnis', 'C4',
+                                     '– noch kein Name (Stundenzettel aktualisieren und speichern) –')):
+    verknuepfung_fehler(datei, 'fehler-x.xlsx')
+    d = oeffnen('fehler-x.xlsx'); d.calculateAll()
+    pruefe(f'{os.path.basename(datei)}: kein Fehler', wert(d, blatt, zelle), soll_)
+    d.close(True)
 
 # 2. Eingabe-Dateien „in Excel“ speichern (ZELLE("Dateiname") wie in Excel fest eingesetzt)
 SZN = {n: f'Stundenzettel {i + 1:02d}.xlsx' for i, n in enumerate(MA)}
@@ -214,6 +253,17 @@ d = oeffnen(f'{PRIVAT}/{SZN[MA[0]]}')
 d.Sheets.getByName('Stammdaten').getCellRangeByName('B5').setValue(0.25); d.calculateAll()    # Anna: Anspruch 0,25 Tage → Warnung
 speichern(d, f'{PRIVAT}/{SZN[MA[0]]}'); d.close(True)
 d = oeffnen(f'{PRIVAT}/{SZN[MA[2]]}'); d.calculateAll(); speichern(d, f'{PRIVAT}/{SZN[MA[2]]}'); d.close(True)
+
+# 5b. Inhaltsverzeichnis (Ordner Steuerung): Nr. → Name aus den gespeicherten Stundenzetteln
+print('--- Inhaltsverzeichnis')
+iv_links = openpyxl.load_workbook(pfad(f'{PRIVAT}/Inhaltsverzeichnis.xlsx'))['Inhaltsverzeichnis']
+pruefe('Inhaltsverzeichnis: Klick-Link', iv_links['B5'].hyperlink.target, 'Stundenzettel 02.xlsx')
+aktualisieren_wie_excel(f'{PRIVAT}/Inhaltsverzeichnis.xlsx')
+iv = oeffnen(f'{PRIVAT}/Inhaltsverzeichnis.xlsx'); iv.calculateAll()
+for i, n in enumerate(MA):
+    pruefe(f'Inhaltsverzeichnis Zeile {i + 1}', wert(iv, 'Inhaltsverzeichnis', f'B{4 + i}') + ' → ' + wert(iv, 'Inhaltsverzeichnis', f'C{4 + i}'),
+           f'Stundenzettel {i + 1:02d} → {n}')
+iv.close(True)
 
 # 6. Eingabe-Dateien holen die Vorgaben aus dem Stundenzettel (Steuerer öffnet, aktualisiert, speichert)
 print('--- Eingabe-Datei mit Vorgaben')

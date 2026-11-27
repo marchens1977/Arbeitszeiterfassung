@@ -106,6 +106,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Nach Test V4: Eingabe-Datei ohne Blatt „Start“ (Jahr/Urlaubsanspruch/Soll/Vertragsmonate/057 kommen per Verknüpfung aus dem Stundenzettel, Blatt `Vorgaben`), Name in den Titeln, keine Nummern, **Reststunden zum Jahresende** (rot „noch zu leisten“, grün „zu viel geleistet“, fett); Stundenzettel heißen „Stundenzettel 01–35.xlsx“; Schicht- UND Tagesplan lesen direkt die Eingabe-Dateien (kein Speichern des Stundenzettels/Schichtplans mehr nötig); ohne Vorgabe gilt „Vertrag besteht“; Kettentest 64 Prüfpunkte | direkt auf `main` |
 | 2026-11-27 | Stundenzettel: Überschriften ohne Nummern und auf allen Blättern mit Namen (Stammdaten, Tagesliste, Urlaub, Auswertung); Kettentest 68 Prüfpunkte | direkt auf `main` |
 | 2026-11-27 | Anleitungs-Blätter entfernt (Eingabe-Datei, Stundenzettel, Schichtplan) und Erklärtext in der Tagesplan-Übersicht gestrichen – der Steuerer erklärt das Tool bei der Einweisung; Kettentest 70 Prüfpunkte | direkt auf `main` |
+| 2026-11-27 | Nach Test V6: `#BEZUG!` in der ganzen Dateneingabe, wenn die Verknüpfung zum Stundenzettel (noch) einen Fehler liefert → alle Formeln, die Verknüpfungen auswerten, mit `IFERROR` abgesichert (Eingabe-Datei: „keine Vorgabe“, Stundenzettel: leer, Schicht-/Tagesplan: leer). Neu: `Steuerung/Inhaltsverzeichnis.xlsx` (Stundenzettel-Nr. → Name, Klick öffnet die Datei); `plaene-erzeugen.py --testnamen` (35 erfundene „Mustermann, Vorname“ mit unterschiedlichen Musterwochen). Großes Test-Paket per E-Mail; Kettentest 84 Prüfpunkte | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -164,9 +165,9 @@ Vorhandene Werkzeuge (benötigen Node.js und Playwright mit Chromium; in der Cla
 | `node werkzeuge/name-und-aussehen.test.js` | Angleichung an Excel: Mitarbeitername (Hinweis ohne Komma, große Anzeige, bleibt nach Neuladen, steckt in der Sicherung), Farben gelb/grau/hellblau, Uhrzeiten 11:00–17:00, Reiter-/Überschriften; macht Handy-Screenshots. Endet mit „ERGEBNIS: alles in Ordnung“. |
 | `node werkzeuge/offline-app.test.js` | Startet einen lokalen Webserver und prüft Manifest, Symbole, Offline-Helfer und den Start ohne Internet |
 | `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT] [--anspruch TAGE] [--ab-monat N] [--urlaub K]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. `--ab-monat 7` = Ausscheiden ab Juli (Erwartung bei 30 Tagen: 15 Tage, 117:00:00), `--urlaub 15` trägt 15 Urlaubstage im Januar ein. |
-| `python3 werkzeuge/plaene.test.py` | Ganze Kette (Abschnitt 10a, Stand V5): Mini-Paket in zwei Ordnern; Eingabe-Dateien speichern (Titel, ohne Vorgaben); Schicht- und Tagesplan direkt aus den Eingabe-Dateien; Stundenzettel (muss **genau wie die Hauptvorlage** rechnen, 057-Wert); Eingabe holt Vorgaben (Reststunden = Stundenzettel sekundengenau, Urlaubswarnung); Vertragsende. Aktualisieren wie Excel (gespeicherte Werte). 64 Prüfpunkte, Ende „ERGEBNIS: alles in Ordnung“ (ca. 3 Min). |
+| `python3 werkzeuge/plaene.test.py` | Ganze Kette (Abschnitt 10a, Stand V5): Mini-Paket in zwei Ordnern; Verknüpfungen, die Fehler liefern (kein `#BEZUG!`); Inhaltsverzeichnis; Eingabe-Dateien speichern (Titel, ohne Vorgaben); Schicht- und Tagesplan direkt aus den Eingabe-Dateien; Stundenzettel (muss **genau wie die Hauptvorlage** rechnen, 057-Wert); Eingabe holt Vorgaben (Reststunden = Stundenzettel sekundengenau, Urlaubswarnung); Vertragsende. Aktualisieren wie Excel (gespeicherte Werte). 84 Prüfpunkte, Ende „ERGEBNIS: alles in Ordnung“ (ca. 3 Min). |
 | `python3 werkzeuge/vorlagen-bauen.py` | Kein Test: baut aus der Hauptvorlage `excel/vorlagen/Eingabe.xlsx` und `Stundenzettel-Vorlage.xlsx` neu – **nach jeder Änderung an der Hauptvorlage ausführen**, danach `plaene.test.py` |
-| `python3 werkzeuge/plaene-erzeugen.py --ordner ORDNER [...]` | Kein Test: erzeugt Mitarbeiter-Dateien, `Schichtplan.xlsx`, `MA-Tagesplan.xlsx` (Optionen siehe Kopf der Datei; Mini-Paket: `--plaetze 3 --wochen 1 --tage 5 --mitarbeiter "Beispiel, Anna" "Test, Ben" --beispieldaten`) |
+| `python3 werkzeuge/plaene-erzeugen.py --ordner ORDNER [...]` | Kein Test: erzeugt Mitarbeiter-Dateien, Stundenzettel, `Inhaltsverzeichnis.xlsx`, `Schichtplan.xlsx`, `MA-Tagesplan.xlsx` (Optionen siehe Kopf der Datei; Mini-Paket: `--plaetze 3 --wochen 1 --tage 5 --mitarbeiter "Beispiel, Anna" "Test, Ben" --beispieldaten`; großes Test-Paket: `--plaetze 35 --testnamen`) |
 | `werkzeuge/xlsx_spalten.py` | Kein Test: Hilfsfunktion `spalten_einfuegen(wb, blatt, idx)` – fügt Spalten ein und zieht alle Bezüge (Formeln, Namen, Formatierung, Prüfungen, Verbindungen) mit; danach immer `excel-pruefen.py` alt/neu vergleichen |
 | `node werkzeuge/symbole-erzeugen.js` | Kein Test: erzeugt aus `icons/icon.svg` alle PNG-Symbole neu (nur nach Änderung am Symbol) |
 
@@ -319,6 +320,16 @@ Test Mini-Paket V4 (erledigt; Ergebnis führte zu V5):
 - [ ] In Annas Eingabe-Datei Urlaubsanspruch auf 0 → oben in der Dateneingabe rote Warnung.
 
 ### Übergabe für die nächste Sitzung (Stand 27.11.2026)
+
+**Neuester Stand (27.11.2026, nach Test V6):** Mini-Test bestanden. Großes Test-Paket (35 erfundene „Mustermann, Vorname“, 52 Wochen,
+alle Arbeitstage, `--plaetze 35 --testnamen`) per E-Mail beim Nutzer – er testet damit die große Anzahl. Stundenzettel bleiben nummeriert
+(Entscheidung des Nutzers: Variante „Inhaltsverzeichnis“ statt Namen im Dateinamen, weil sonst beim Mitarbeiterwechsel mehr umzustellen wäre).
+Regel: Mitarbeiternamen in Testpaketen immer „Mustermann, <Fantasievorname>“ (nie mit „Max“ beginnen – „Mustermann, Max…“ = freier Platz).
+Wichtig für Excel: Von Claude erzeugte Dateien haben keine gespeicherten Werte. Reihenfolge beim ersten Mal: Eingabe-Dateien öffnen+speichern →
+Stundenzettel aktualisieren+speichern → Inhaltsverzeichnis aktualisieren. Liefert eine Verknüpfung trotzdem Fehler, zeigen die Dateien jetzt
+„keine Vorgabe“/leer statt `#BEZUG!`.
+
+Ältere Übergabe:
 
 - **Mini-Paket V6** (alle Änderungen bis hier, 3 Plätze, 1 Woche, 5 Tage) ist per E-Mail beim Nutzer; er testet es in der NÄCHSTEN Sitzung
   in seinem Arbeitsumfeld (zwei Ordner „Schichtplanung“/„Steuerung“). Erzeugen: `python3 werkzeuge/plaene-erzeugen.py --ordner X

@@ -2,7 +2,8 @@
 """Erzeugt den kompletten Ordneraufbau (ohne Makros, nur Excel-Verknüpfungen) unter AUSGABE:
 
   AUSGABE/Schichtplanung/   (alle Mitarbeiter)  „Nachname, Vorname.xlsx“ (Eingabe-Datei), Schichtplan.xlsx, MA-Tagesplan.xlsx
-  AUSGABE/Steuerung/        (nur Steuerer)      „Stundenzettel 01.xlsx“ … (fest je Platz; Name steht in der Datei)
+  AUSGABE/Steuerung/        (nur Steuerer)      „Stundenzettel 01.xlsx“ … (fest je Platz; Name steht in der Datei),
+                                                Inhaltsverzeichnis.xlsx (Nr. → Name, Klick öffnet den Stundenzettel)
 
 Vorlagen: excel/vorlagen/Eingabe.xlsx und Stundenzettel-Vorlage.xlsx (vorher: python3 werkzeuge/vorlagen-bauen.py).
 Datenfluss (Aktualisieren in Excel: Daten → Links bearbeiten → Werte aktualisieren):
@@ -16,6 +17,7 @@ Aufruf:
   --plaetze N       Anzahl Mitarbeiter-Plätze (fehlende Namen werden „Mustermann, Max NN“)
   --wochen N        Anzahl Wochenblätter ab 04.01.2027 (Standard: alle 52)
   --tage N          Anzahl Tagesblätter (Werktage ohne Feiertage) ab 04.01.2027 (Standard: alle)
+  --testnamen       füllt freie Plätze mit erfundenen Namen „Mustermann, <Vorname>“ (zählen als aktiv; für Tests mit vielen MA)
   --beispieldaten   trägt in die ersten Mitarbeiter-Dateien Testwerte ein (nur für das Mini-Paket)
 """
 import argparse, datetime as dt, os, shutil
@@ -36,7 +38,11 @@ BLAU, ORANGE, GELB = 'FF002D72', 'FFFF5910', 'FFFFF2CC'
 DATUM_LANG = '[$-407]dddd, d. mmmm yyyy'
 VORLAGEN = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'excel', 'vorlagen')
 OFFEN, PRIVAT = 'Schichtplanung', 'Steuerung'          # Ordnernamen (nebeneinander, gleiches Laufwerk)
-SZ = 'Stundenzettel '                                  # Dateiname-Anfang der Stundenzettel
+SZ = 'Stundenzettel '
+TESTVORNAMEN = ['Alva', 'Bosse', 'Cleo', 'Dario', 'Elin', 'Fiete', 'Greta', 'Hanno', 'Ida', 'Jarne', 'Kaja', 'Linus', 'Mila',
+                'Nele', 'Ole', 'Pia', 'Quirin', 'Rosa', 'Sanne', 'Tjark', 'Una', 'Vito', 'Wanda', 'Xaver', 'Yara', 'Zeno',
+                'Amira', 'Bela', 'Carla', 'Delia', 'Emil', 'Frida', 'Gero', 'Hedda', 'Ilvy', 'Juna', 'Kian', 'Lotte',
+                'Merle', 'Noah']                                  # Dateiname-Anfang der Stundenzettel
 
 duenn = Side(style='thin', color='FFBFBFBF')
 rahmen = Border(left=duenn, right=duenn, top=duenn, bottom=duenn)
@@ -92,7 +98,7 @@ def regel(ws, bereich, formel, fill=None, font=None):
 
 
 # ---------------------------------------------------------------- Mitarbeiter-Dateien
-def mitarbeiter_dateien(ordner, namen, beispieldaten):
+def mitarbeiter_dateien(ordner, namen, beispieldaten, testmuster=False):
     for i, n in enumerate(namen):
         # privater Stundenzettel mit Verknüpfung auf die Eingabe-Datei im Nachbarordner
         szname = f'{SZ}{i + 1:02d}.xlsx'                   # fest je Platz – ändert sich beim Mitarbeiterwechsel nicht
@@ -110,6 +116,16 @@ def mitarbeiter_dateien(ordner, namen, beispieldaten):
             else:        # Ben: 06.01. abwesend (Gutschrift), 07.01. Teammentor*in, 08.01. frei, Beginn 13:00 mit 45 Min
                 for r in range(5, 10): m[f'B{r}'] = dt.time(13, 0); m[f'C{r}'] = 45
                 d['F9'] = 'abwesend (Gutschrift)'; d['F10'] = 'Teammentor*in'; d['D11'] = 'Frei'
+        elif testmuster and n.startswith('Mustermann, ') and not n.startswith('Mustermann, Max'):
+            # unterschiedliche Musterwochen: Beginn 11:00–17:00 (15-Min.-Takt), Pause 30/45/60, mal Homeoffice/Frei
+            for t in range(5):
+                r = 5 + t
+                q = (i * 7 + t * 3) % 25                     # 0 … 24 → 11:00 … 17:00
+                m[f'B{r}'] = dt.time(11 + q // 4, (q % 4) * 15)
+                m[f'C{r}'] = (30, 45, 60)[(i + t) % 3]
+                if (i + t) % 4 == 0: m[f'D{r}'] = 'Homeoffice'
+                elif (i + t) % 9 == 0: m[f'D{r}'] = 'Teammentor*in'
+            if i % 5 == 0: m[f'B{5 + i % 5}'] = 'Frei'      # jede/r Fünfte montags frei
         wb.save(ziel)
 
 
@@ -155,8 +171,8 @@ def quellen(wb, namen):
         r = 3 + s
         ma[f'A{r}'] = s; ma[f'B{r}'] = namen[s - 1] + '.xlsx'
         c0 = L(2 + (s - 1) * 3)
-        ma[f'C{r}'] = f'=IF(ISNUMBER(Daten!{c0}$1),"",Daten!{c0}$1)'
-        ma[f'D{r}'] = f'=IF(N(Daten!{c0}$2)=1,1,0)'
+        ma[f'C{r}'] = f'=IFERROR(IF(ISNUMBER(Daten!{c0}$1),"",Daten!{c0}$1),"")'
+        ma[f'D{r}'] = f'=IFERROR(IF(N(Daten!{c0}$2)=1,1,0),0)'
         ma[f'E{r}'] = f'=IF(D{r}=1,LOWER(C{r}),"zzzz"&TEXT(A{r},"00"))'
         ma[f'F{r}'] = f'=COUNTIF($E$4:$E${3 + N},"<"&E{r})+COUNTIF($E$4:E{r},E{r})'
         ma[f'H{r}'] = s
@@ -290,6 +306,33 @@ def tagesplan(ordner, namen, n_tage):
     wb.save(os.path.join(ordner, OFFEN, 'MA-Tagesplan.xlsx'))
 
 
+# ---------------------------------------------------------------- Inhaltsverzeichnis (Ordner Steuerung)
+def inhaltsverzeichnis(ordner, namen):
+    """Steuerung/Inhaltsverzeichnis.xlsx: Stundenzettel-Nr. → Mitarbeitername (per Verknüpfung aus dem Stundenzettel,
+    Stammdaten!B3) mit Klick-Link zum Öffnen. Der Name passt sich beim Mitarbeiterwechsel von selbst an."""
+    wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'Inhaltsverzeichnis'
+    ws['A1'] = 'Inhaltsverzeichnis – Stundenzettel'; ws['A1'].font = Font(bold=True, size=14, color=BLAU)
+    ws['A2'] = ('Name kommt aus dem jeweiligen Stundenzettel (Daten → Links bearbeiten → Werte aktualisieren). '
+                'Klick auf den Dateinamen öffnet den Stundenzettel.')
+    ws['A2'].alignment = Alignment(wrap_text=True, vertical='top'); ws.merge_cells('A2:C2'); ws.row_dimensions[2].height = 32
+    for i, h in enumerate(('Nr.', 'Stundenzettel', 'Mitarbeiter')): kopf(ws.cell(3, 1 + i), h)
+    for s in range(1, len(namen) + 1):
+        r = 3 + s; datei = f'{SZ}{s:02d}.xlsx'
+        nr = externer_link(wb, datei, ['Stammdaten'])
+        ws[f'A{r}'] = s
+        ws[f'B{r}'] = datei[:-5]; ws[f'B{r}'].hyperlink = datei; ws[f'B{r}'].font = Font(color='FF0563C1', underline='single')
+        ws[f'E{r}'] = f'=[{nr}]Stammdaten!$B$3'            # nur einfacher Bezug (versteckte Spalte)
+        ws[f'C{r}'] = f'=IFERROR(IF(OR(E{r}="",E{r}=0),"– noch kein Name (Stundenzettel aktualisieren und speichern) –",E{r}),"– noch kein Name (Stundenzettel aktualisieren und speichern) –")'
+        for c in 'ABC': ws[f'{c}{r}'].border = rahmen
+        ws[f'A{r}'].alignment = Alignment(horizontal='center')
+    regel(ws, f'C4:C{3 + len(namen)}', 'LEFT($C4,1)="–"', None, Font(color='FF7F7F7F', italic=True))
+    for c, w in zip('ABC', (6, 22, 60)): ws.column_dimensions[c].width = w
+    ws.column_dimensions['E'].hidden = True
+    ws.freeze_panes = 'A4'
+    ws.protection.sheet = True
+    wb.save(os.path.join(ordner, PRIVAT, 'Inhaltsverzeichnis.xlsx'))
+
+
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--ordner', required=True)
@@ -298,10 +341,15 @@ if __name__ == '__main__':
     ap.add_argument('--tage', type=int, default=0)
     ap.add_argument('--mitarbeiter', nargs='*', default=[])
     ap.add_argument('--beispieldaten', action='store_true')
+    ap.add_argument('--testnamen', action='store_true')
     a = ap.parse_args()
+    if a.testnamen:   # erfundene Namen „Mustermann, <Vorname>“ für freie Plätze (aktiv, anders als „Mustermann, Max NN“)
+        frei = [v for v in TESTVORNAMEN if f'Mustermann, {v}' not in a.mitarbeiter]
+        a.mitarbeiter = list(a.mitarbeiter) + [f'Mustermann, {v}' for v in frei[:max(0, a.plaetze - len(a.mitarbeiter))]]
     for o in (OFFEN, PRIVAT): os.makedirs(os.path.join(a.ordner, o), exist_ok=True)
     namen = list(a.mitarbeiter) + [f'Mustermann, Max {i:02d}' for i in range(len(a.mitarbeiter) + 1, a.plaetze + 1)]
-    mitarbeiter_dateien(a.ordner, namen, a.beispieldaten)
+    mitarbeiter_dateien(a.ordner, namen, a.beispieldaten, a.testnamen)
     schichtplan(a.ordner, namen, a.wochen)
     tagesplan(a.ordner, namen, a.tage)
+    inhaltsverzeichnis(a.ordner, namen)
     print('Erzeugt in', a.ordner, ':', len(namen), 'Eingabe-Dateien + Stundenzettel, Schichtplan.xlsx, MA-Tagesplan.xlsx')

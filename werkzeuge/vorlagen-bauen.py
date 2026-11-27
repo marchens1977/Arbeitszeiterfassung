@@ -86,9 +86,10 @@ def eingabe():
     ls['O2'] = '=CELL("filename",A1)'
     ls['O3'] = st['H3'].value.replace('G3', 'O2')
     ls['O4'] = st['B3'].value.replace('H3', 'O3')
-    ls['O5'] = '=IF(AND(ISNUMBER(Vorgaben!A1),N(Vorgaben!A1)>2000),Vorgaben!A1,2027)'
-    ls['O6'] = '=IF(ISNUMBER(Vorgaben!B1),Vorgaben!B1,0)'
-    ls['O7'] = '=IF(ISNUMBER(Vorgaben!C1),Vorgaben!C1,0)'
+    # IFERROR: kommt über die Verknüpfung ein Fehler (Stundenzettel noch nie gespeichert/nicht erreichbar), gilt „keine Vorgabe“
+    ls['O5'] = '=IFERROR(IF(N(Vorgaben!A1)>2000,Vorgaben!A1,2027),2027)'
+    ls['O6'] = '=IFERROR(IF(ISNUMBER(Vorgaben!B1),Vorgaben!B1,0),0)'
+    ls['O7'] = '=IFERROR(IF(ISNUMBER(Vorgaben!C1),Vorgaben!C1,0),0)'
     ls['O8'] = '=SUM(T2:T13)'
     ls['O9'] = '=O7-O8'
     for t, r in (('Pfad', 2), ('Dateiname', 3), ('Mitarbeiter', 4), ('Jahr', 5), ('Urlaubsanspruch (0 = unbekannt)', 6),
@@ -97,9 +98,9 @@ def eingabe():
     for i in range(12):
         r, col = 2 + i, chr(65 + i)
         ls[f'P{r}'] = i + 1
-        ls[f'Q{r}'] = f'=IF(N(Vorgaben!{col}3)=1,1,0)'
-        ls[f'R{r}'] = f'=N(Vorgaben!{col}4)'
-        ls[f'S{r}'] = f'=IF(N(Vorgaben!{col}6)=1,N(Vorgaben!{col}5),"")'
+        ls[f'Q{r}'] = f'=IFERROR(IF(N(Vorgaben!{col}3)=1,1,0),0)'
+        ls[f'R{r}'] = f'=IFERROR(N(Vorgaben!{col}4),0)'
+        ls[f'S{r}'] = f'=IFERROR(IF(N(Vorgaben!{col}6)=1,N(Vorgaben!{col}5),""),"")'
         ls[f'T{r}'] = (f'=IF(Q{r}=1,0,IF(S{r}<>"",S{r},SUMIFS(Dateneingabe!$K$6:$K$267,Dateneingabe!$L$6:$L$267,P{r},'
                        f'Dateneingabe!$G$6:$G$267,"<>Urlaub")))')
     for t, c in (('Monat', 'P'), ('ohne Vertrag', 'Q'), ('Regel-Tag Sek.', 'R'), ('057 Sek.', 'S'), ('Ist Sek.', 'T')):
@@ -197,9 +198,9 @@ def stundenzettel():
     t = wb['Tagesliste']
     for r in range(6, 268):
         q = r - 2
-        t[f'D{r}'] = f'=IF(AND(ISNUMBER(Daten!B{q}),Daten!B{q}=0),"",Daten!B{q})'
-        t[f'E{r}'] = f'=Daten!C{q}'
-        t[f'F{r}'] = f'=IF(AND(ISNUMBER(Daten!D{q}),Daten!D{q}=0),"",Daten!D{q})'
+        t[f'D{r}'] = f'=IFERROR(IF(AND(ISNUMBER(Daten!B{q}),Daten!B{q}=0),"",Daten!B{q}),"")'   # IFERROR: Verknüpfung noch ohne Werte
+        t[f'E{r}'] = f'=IFERROR(Daten!C{q},"")'
+        t[f'F{r}'] = f'=IFERROR(IF(AND(ISNUMBER(Daten!D{q}),Daten!D{q}=0),"",Daten!D{q}),"")'
         t[f'G{r}'] = f'=IF(A{r}="","",IF(M{r}=0,"kein Vertrag",IF(D{r}<>"",D{r},IF(C{r}<>"","Feiertag",""))))'
         t[f'I{r}'] = f'=IF(A{r}="","",IF(NOT(ISNUMBER(G{r})),"",IF(F{r}="Büro","",F{r})))'
         for col in 'DEF':
@@ -222,7 +223,7 @@ def stundenzettel():
                '„Werte aktualisieren“. Grau „kein Vertrag“ = Monat mit Jahres-Basis 0.')
 
     st = wb['Stammdaten']
-    st['B3'] = '=IF(ISNUMBER(Daten!B1),"",Daten!B1)'
+    st['B3'] = '=IFERROR(IF(ISNUMBER(Daten!B1),"",Daten!B1),"")'
     st['G3'] = None; st['H3'] = None
     st['D3'] = ('=IF(B3="","Noch keine Daten – Verknüpfung zur Eingabe-Datei aktualisieren (Daten → Links bearbeiten → '
                 'Werte aktualisieren).","")')
