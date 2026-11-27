@@ -196,7 +196,7 @@ def schichtplan(ordner, namen, n_wochen):
             regel(ws, blk, f'${an_}4="Homeoffice"', 'FFFFFF00')
             regel(ws, blk, f'${an_}4="Teammentor*in"', 'FFBDD7EE')
         ws.column_dimensions['A'].width = 26
-        for c in range(2, 17): ws.column_dimensions[L(c)].width = 10 if (c - 2) % 3 != 2 else 13
+        for c in range(2, 17): ws.column_dimensions[L(c)].width = 9 if (c - 2) % 3 != 2 else 16
         ws.column_dimensions['Q'].hidden = True
         ws.freeze_panes = 'B4'
         ws.page_setup.orientation = 'landscape'; ws.page_setup.fitToWidth = 1; ws.page_setup.fitToHeight = 0
@@ -310,7 +310,7 @@ def tagesplan(ordner, N, n_tage):
         regel(ws, f'A3:J{last}', 'AND($C3<>"",NOT(ISNUMBER($M3)))', 'FFD9D9D9', Font(color='FF7F7F7F', italic=True))
         regel(ws, f'B3:F{last}', '$F3="HO"', 'FFFFFF00')
         regel(ws, f'B3:F{last}', '$F3="Teammentor*in"', 'FFBDD7EE')
-        for c, w in zip('ABCDEFGHIJ', (6, 16, 18, 10, 10, 13, 22, 22, 22, 22)): ws.column_dimensions[c].width = w
+        for c, w in zip('ABCDEFGHIJ', (6, 16, 18, 10, 10, 16, 22, 22, 22, 22)): ws.column_dimensions[c].width = w
         for c in 'LMN': ws.column_dimensions[c].hidden = True
         ws.freeze_panes = 'D3'
         ws.page_setup.orientation = 'landscape'; ws.page_setup.fitToWidth = 1; ws.page_setup.fitToHeight = 0

@@ -98,7 +98,8 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | App: dieselbe Logik wie Excel – Ausscheiden unter dem Jahr (Monate mit Jahres-Basis 0 = „kein Vertrag“, grau), anteiliger Urlaub gesetzlich gerundet, Hinweis unter „Urlaubsanspruch volles Jahr“, Urlaubs-Karten grün/rot; `sw.js` v5; neuer Test `ausscheiden.test.js` (vergleicht mit den Excel-Werten) | #12 |
 | 2026-11-27 | Grundregel ins Tagebuch: Excel-Datei ist Vorlage, App zieht Logik und Aussehen exakt gleich nach; keine Synchronisation; Liste der noch offenen Unterschiede | #13 |
 | 2026-11-27 | App an Excel angeglichen: Uhrzeit-Auswahl (Dateneingabe + Musterwoche) nur 11:00–17:00 (alte gespeicherte Zeiten bleiben erhalten); Mitarbeitername (Feld „Mitarbeiter (Nachname, Vorname)“, Überschrift „1. Stammdaten – Name“, blaues Feld mit orangem Rand, Hinweis ohne Komma, in der Sicherung); Excel-Farben: Eingabe gelb/orange, gesperrt/berechnet grau, Urlaub hellblau, Feiertag dunkelrot, Legende; Überschriften/Reiter wie in Excel („5. Auswertung“); `sw.js` v6; neuer Test `name-und-aussehen.test.js` | #14 |
-| 2026-11-27 | Excel: Spalte „Anmerkung“ (Dateneingabe F = Eingabe, I = gilt; Musterwoche D) mit Büro/Homeoffice/Teammentor*in/krank; „krank“ = geplante Zeit wird gutgeschrieben (Rechnung unverändert); verstecktes Blatt „Export“ für den Schichtplan. Neu: Schichtplan + MA-Tagesplan ohne Makros (Abschnitt 10), Mini-Paket zum Test bei der Naspa; Werkzeuge `xlsx_spalten.py`, `plaene-erzeugen.py`, `plaene.test.py` | #15 |
+| 2026-11-27 | Excel: Spalte „Anmerkung“ (Dateneingabe F = Eingabe, I = gilt; Musterwoche D) mit Büro/Homeoffice/Teammentor*in/krank; „krank“ = geplante Zeit wird gutgeschrieben (Rechnung unverändert); verstecktes Blatt „Export“ für den Schichtplan. Neu: Schichtplan + MA-Tagesplan ohne Makros (Abschnitt 10), Mini-Paket zum Test beim Arbeitgeber; Werkzeuge `xlsx_spalten.py`, `plaene-erzeugen.py`, `plaene.test.py` | #15 |
+| 2026-11-27 | Nach Test des Nutzers (Excel): Eingabefelder der Dateneingabe mit Musterwoche vorbelegt (Formel, grau-kursiv; eigene Einträge fett, per Regel `ISFORMULA`), alle gesperrten/berechneten Felder grau (Gilt-Spalten mit grauer Schrift), Hilfsspalten ausgeblendet, Spalten für „Teammentor*in“ verbreitert (auch Schicht-/Tagesplan); Firmenname im Tagebuch durch „Arbeitgeber“ ersetzt | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -106,8 +107,10 @@ Wichtige Stellen in `index.html`:
   29 statt 30 Tage vorbelegt. Nutzer kann einen Tag nachtragen – oder die Vorbelegung wird angepasst.
 - Vorbereitung auf ein neues Jahr (2028): Jahr umstellen, vorbelegten Urlaub pflegen, ggf. Übernahme des Übertrags.
 - **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2):
-  - Spalte „Anmerkung“ (Büro/Homeoffice/Teammentor*in/krank) in Dateneingabe und Musterwoche (seit #15 in Excel). Nutzer fragen.
-- Schichtplan/Tagesplan: nach erfolgreichem Mini-Test bei der Naspa das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
+  - Spalte „Anmerkung“ (Büro/Homeoffice/Teammentor*in/krank) in Dateneingabe und Musterwoche (seit #15 in Excel).
+  - Gesperrte Felder grau, Gilt-Spalten unauffällig, eigene Einträge fett (seit 27.11.2026 in Excel). Die Vorbelegung mit der Musterwoche hat die App schon.
+  Nutzer hat am 27.11.2026 entschieden: App „später“ anpassen.
+- Schichtplan/Tagesplan: nach erfolgreichem Mini-Test beim Arbeitgeber das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
   Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
   Excel hat zusätzlich das Blatt „Anleitung“, die App erklärt in kurzen Hinweistexten.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
@@ -223,6 +226,13 @@ Wichtig:
   I = gilt (Eingabe, sonst Musterwoche D über `MusterAnm`; nur an Arbeitstagen). Musterwoche D (`ListeAnmMuster`: Büro, Homeoffice,
   Teammentor*in). „krank“: Beginn/Pause bleiben wie geplant und werden gutgeschrieben – die Rechnung ändert sich nicht.
   Spalten wurden mit `xlsx_spalten.py` eingefügt: Dateneingabe G = Gilt Start, H = Gilt Pause, J = Netto, K–M versteckte Helfer.
+- **Vorbelegung** (seit 27.11.2026): Dateneingabe D/E/F enthalten Formeln mit den Werten der Musterwoche (D: Feiertag oder
+  `MusterStart`, E: `MusterPause`, F: `MusterAnm`; leer bei „kein Vertrag“). Der Mitarbeiter überschreibt per Klappmenü. Bedingte Formatierung
+  (Priorität 1/2, vor allen anderen Regeln): Formel → grau-kursiv, eigener Eintrag → fett (`_xlfn.ISFORMULA`, ab Excel 2013).
+  Wird ein Feld gelöscht, rechnet „Gilt“ trotzdem mit der Musterwoche. Zurücknehmen: grau-kursives Feld derselben Spalte kopieren.
+- **Farben**: Gelb = eintragen, Grau `#F2F2F2` = gesperrt/berechnet (Dateneingabe A–C, G–J; Gilt-Spalten mit grauer Schrift).
+  Ausgeblendete Hilfsspalten: Stammdaten G/H, Musterwoche F–I, Dateneingabe K–M, Urlaub D, Auswertung F/G.
+- „krank“ bleibt als Bezeichnung (Entscheidung des Nutzers, 27.11.2026) – Hinweis: Kollegen können die Mitarbeiter-Dateien lesen.
 - **Blatt „Export“** (versteckt, geschützt): Quelle für den Schichtplan. B1 = Name (direkt `=Stammdaten!$B$3`, KEIN Namensbezug –
   LibreOffice verwechselt Namen zwischen verknüpften Dateien), D1 = aktiv (0 bei leer/„Mustermann, Max…“), Zeilen 4–265 = Werktag 1–262
   (A Datum, B Beginn oder Urlaub/Feiertag/Frei/„abwesend“, C Pause, D Anmerkung ohne „krank“). Name: `%2C` wird zu „,“ dekodiert.
@@ -240,6 +250,7 @@ Tests für den Nutzer (Excel):
 - [ ] Excel am PC: Datei als „Mustermann, Max.xlsx“ speichern, neu öffnen → Stammdaten zeigt oben „1. Stammdaten – Mustermann, Max“ und das blaue Feld „Mitarbeiter“.
 - [ ] Ausscheiden: Jahres-Basis Juli–Dezember auf `0:00` → Stammdaten zeigt „Anteilig 6 von 12 Monaten: 15 Tage“, Urlaub 15 Tage / 117:00:00, Juli–Dezember in der Dateneingabe grau „kein Vertrag“.
 - [ ] Urlaubsblatt: Block oben rot, solange genommener ≠ zustehender Urlaub; grün, wenn genau gleich.
+- [ ] Vorbelegung: gelbe Felder der Dateneingabe zeigen grau-kursiv die Musterwoche; eigener Eintrag (z. B. Urlaub) erscheint fett.
 - [ ] Anmerkung: Musterwoche Freitag „Homeoffice“ → in der Dateneingabe steht freitags „Homeoffice“ (gelb); einzelner Tag „Büro“ hebt es auf; „krank“ ändert die Stunden nicht.
 - [ ] Gleiche Eingaben wie in der App → gleiche Jahresbilanz (stichprobenartig vergleichen).
 
@@ -247,7 +258,7 @@ Tests für den Nutzer (Excel):
 
 Wunsch des Nutzers (27.11.2026): Steuerer sieht automatisch, wer wann da ist. Vorlagen kamen per Mail
 („Schichtplan.xlsx“ mit Wochenblatt „04.01.2027“, „MA-Tagesplan.xlsx“ mit Kampagnen-Spalten).
-**Makros sind bei der Naspa nicht erlaubt** → nur Excel-Verknüpfungen (Daten → Links bearbeiten → Werte aktualisieren).
+**Makros sind beim Arbeitgeber nicht erlaubt** → nur Excel-Verknüpfungen (Daten → Links bearbeiten → Werte aktualisieren).
 
 Entscheidungen des Nutzers:
 - Alle Dateien in EINEM Ordner (Abteilungsordner); Mitarbeiter dürfen alles ansehen.
@@ -273,7 +284,7 @@ Aufbau:
   Schichtplan nach dem Aktualisieren speichern, bevor der Tagesplan aktualisiert wird. Neue (von Claude erzeugte) Dateien haben noch keine
   gespeicherten Werte → einmal in Excel öffnen und speichern.
 
-Test bei der Naspa (Mini-Paket: „Beispiel, Anna.xlsx“, „Test, Ben.xlsx“, „Mustermann, Max 03.xlsx“, Schichtplan 1 Woche, Tagesplan 5 Tage):
+Test beim Arbeitgeber (Mini-Paket: „Beispiel, Anna.xlsx“, „Test, Ben.xlsx“, „Mustermann, Max 03.xlsx“, Schichtplan 1 Woche, Tagesplan 5 Tage):
 - [ ] Alle 5 Dateien in einen neuen Ordner auf dem Firmenlaufwerk legen.
 - [ ] Anna und Ben je einmal öffnen und speichern (Stammdaten zeigt den Namen).
 - [ ] Schichtplan öffnen → „Inhalt aktivieren“ bzw. Daten → Links bearbeiten → Werte aktualisieren → Werte erscheinen
