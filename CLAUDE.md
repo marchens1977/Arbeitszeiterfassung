@@ -32,6 +32,19 @@ Wichtige Stellen in `index.html`:
 
 ## 2. Regeln und Entscheidungen
 
+- **Grundregel: Die Excel-Datei ist die Vorlage, die App zieht nach** (Festlegung des Nutzers, 27.11.2026).
+  Hintergrund: Die Excel-Datei liegt zentral im Abteilungsordner und darf von allen Mitarbeitern genutzt werden.
+  Die App („für die Hosentasche“, Stundenkonto auch von zu Hause) muss erst noch geprüft/freigegeben werden.
+  Daraus folgt:
+  1. Logik-Änderungen wünscht der Nutzer zuerst für die Excel-Datei. Was dort entschieden ist, gilt auch für die App
+     und wird in der App **genau gleich** nachgebaut (gleiche Rechnung, gleiche Rundung, gleiche Ergebnisse).
+  2. Auch das **Aussehen** soll möglichst gleich sein (Farben, Rot/Grün-Anzeigen, Bezeichnungen, Auswahllisten),
+     damit Mitarbeiter mit beiden Varianten gleich umgehen können.
+  3. Nach jeder Excel-Änderung prüfen, ob die App nachgezogen werden muss, und dem Nutzer sagen, was noch abweicht
+     (Liste in Abschnitt 4 pflegen). Ohne Rückfrage nachziehen nur, wenn der Nutzer es so beauftragt.
+  4. **Keine Synchronisation** zwischen Excel und App – technisch nicht vorgesehen und ausdrücklich nicht gewünscht.
+     Beide werden inhaltlich getrennt geführt; der Mitarbeiter überträgt seine Daten selbst, je nachdem, was er hauptsächlich nutzt.
+
 - **Rechenmodell nicht verändern**, es sei denn, der Nutzer wünscht es ausdrücklich: Regel-Tag = Jahresstunden / 52 / 5;
   Urlaub wird vom Soll abgezogen; Feiertage zählen als Regel-Tag auf das Ist; Urlaubstage zählen nicht auf das Ist.
 - **Ausscheiden/Eintritt unter dem Jahr** (Wunsch des Nutzers, 27.11.2026, in App **und** Excel gleich):
@@ -79,13 +92,17 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Excel: Klappmenü „Start / Status“ in der Musterwoche ebenfalls nur noch Frei und 11:00–17:00 (15-Minuten-Takt; Liste `ListeMuster` = `Listen!B2:B27`) | direkt auf `main` |
 | 2026-11-27 | Excel (Rechenmodell auf Wunsch erweitert): Ausscheiden unter dem Jahr – Monate mit Jahres-Basis 0 zählen nicht („kein Vertrag“, grau), Urlaub anteilig (Anspruch × Vertragsmonate ÷ 12, gesetzlich gerundet), Urlaubsstunden mit Ø Regel-Tag nur der Vertragsmonate; Urlaubsblatt: Block rot/grün; `excel-pruefen.py` mit `--ab-monat`, `--anspruch`, `--urlaub` | direkt auf `main` |
 | 2026-11-27 | App: dieselbe Logik wie Excel – Ausscheiden unter dem Jahr (Monate mit Jahres-Basis 0 = „kein Vertrag“, grau), anteiliger Urlaub gesetzlich gerundet, Hinweis unter „Urlaubsanspruch volles Jahr“, Urlaubs-Karten grün/rot; `sw.js` v5; neuer Test `ausscheiden.test.js` (vergleicht mit den Excel-Werten) | #12 |
+| 2026-11-27 | Grundregel ins Tagebuch: Excel-Datei ist Vorlage, App zieht Logik und Aussehen exakt gleich nach; keine Synchronisation; Liste der noch offenen Unterschiede | #13 |
 
 ## 4. Offene Ideen / nächste Schritte
 
 - Vorbelegter Urlaub: Der 26.03.2027 (Karfreitag) war als Urlaub eingetragen und zählt nicht; dadurch sind nur
   29 statt 30 Tage vorbelegt. Nutzer kann einen Tag nachtragen – oder die Vorbelegung wird angepasst.
 - Vorbereitung auf ein neues Jahr (2028): Jahr umstellen, vorbelegten Urlaub pflegen, ggf. Übernahme des Übertrags.
-- App-Klappmenüs für Arbeitsbeginn gehen noch von 05:00 bis 18:00 (in Excel auf 11:00–17:00 begrenzt). Bei Bedarf angleichen.
+- **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2):
+  - Klappmenüs Arbeitsbeginn (Dateneingabe und Musterwoche): App 05:00–18:00, Excel 11:00–17:00.
+  - Mitarbeitername: Excel liest ihn aus dem Dateinamen und zeigt ihn groß in den Stammdaten; die App hat kein Namensfeld.
+  - Aussehen: Excel nutzt Gelb für Eingabefelder und Grau für Rechenfelder, die App ihre Mets-Farben. Bezeichnungen/Farben angleichen, soweit sinnvoll.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
   von Hand nachgezogen werden (oder bewusst nicht). Ein automatischer Vergleich App ↔ Excel fehlt noch.
 - Es gibt keinen eigenen Reiter „Einstellungen“; App-Einstellungen (Installieren, Updates, Sicherung) stehen im Reiter „1. Stammdaten“.
@@ -153,8 +170,9 @@ Tests für den Nutzer (kann Claude nicht selbst prüfen):
 der Nutzer hat sie am 27.11.2026 vom Handy hochgeladen). Sie ist eine **leere Vorlage ohne persönliche Daten** und darf deshalb
 im öffentlichen Repository liegen. Eigene ausgefüllte Kopien gehören **nicht** ins Repository.
 
-Zweck: dieselbe Rechnung wie die App, aber als Excel-Tabelle (ohne Internet, ohne Browser). Sie ist unabhängig von der App –
-Daten werden **nicht** zwischen App und Excel ausgetauscht.
+Zweck: **Vorlage für die Logik** (siehe Grundregel in Abschnitt 2); die App rechnet genauso. Die Datei liegt beim Nutzer zentral
+im Abteilungsordner für alle Mitarbeiter. Sie ist unabhängig von der App – Daten werden **nicht** zwischen App und Excel ausgetauscht
+(keine Synchronisation, ausdrücklich nicht gewünscht).
 
 Aufbau (Blätter):
 
