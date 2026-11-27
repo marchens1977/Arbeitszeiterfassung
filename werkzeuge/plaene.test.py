@@ -195,6 +195,9 @@ for n in MA:
     aktualisieren_wie_excel(f'{PRIVAT}/{SZN[n]}')
 sz = oeffnen(f'{PRIVAT}/{SZN[MA[1]]}'); sz.calculateAll()
 pruefe('Name aus der Eingabe-Datei', wert(sz, 'Stammdaten', 'B3'), 'Test, Ben')
+for blatt, titel in (('Stammdaten', 'Stammdaten'), ('Tagesliste', 'Tagesliste 2027'), ('Urlaub', 'Urlaubsübersicht & Abgleich'),
+                     ('Auswertung', 'Auswertung & Jahresbilanz 2027')):
+    pruefe(f'Stundenzettel Titel {blatt}', wert(sz, blatt, 'A1'), titel + ' – Test, Ben')
 pruefe('Tagesliste 04.01. Beginn', wert(sz, 'Tagesliste', 'G7'), '13:00')
 pruefe('Tagesliste 06.01. abwesend, Zeit bleibt', wert(sz, 'Tagesliste', 'G9') + ' / ' + wert(sz, 'Tagesliste', 'I9'), '13:00 / abwesend (Gutschrift)')
 pruefe('Tagesliste 08.01. Frei', wert(sz, 'Tagesliste', 'G11'), 'Frei')

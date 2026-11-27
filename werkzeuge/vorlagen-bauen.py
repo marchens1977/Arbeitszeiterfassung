@@ -231,7 +231,13 @@ def stundenzettel():
     ohne_regeln(t, lambda rng, f: 'ISFORMULA' in f)
     for col, txt in zip('DEF', ('Eingetragen:\nStart / Status', 'Eingetragen:\nPause', 'Eingetragen:\nAnmerkung')):
         t[f'{col}5'] = txt
-    t['A1'] = '="4. Tagesliste "&Jahr&IF(Mitarbeiter<>""," – "&Mitarbeiter,"")'
+    # Überschriften ohne Nummern, überall mit Namen (Wunsch des Nutzers nach Test V5)
+    NAME = '&IF(Mitarbeiter<>""," – "&Mitarbeiter,"")'
+    t['A1'] = '="Tagesliste "&Jahr' + NAME
+    wb['Stammdaten']['A1'] = '="Stammdaten"' + NAME
+    wb['Urlaub']['A1'] = '="Urlaubsübersicht & Abgleich"' + NAME
+    wb['Auswertung']['A1'] = '="Auswertung & Jahresbilanz "&Jahr' + NAME
+    wb['Musterwoche']['A1'] = '="Musterwoche (Montag bis Freitag)"' + NAME
     t['A2'] = ('Diese Liste kommt automatisch aus der Eingabe-Datei des Mitarbeiters (Ordner „Schichtplanung“). Hier nichts '
                'eintragen – Änderungen in der Eingabe-Datei vornehmen, dort speichern, dann hier Daten → Links bearbeiten → '
                '„Werte aktualisieren“. Grau „kein Vertrag“ = Monat mit Jahres-Basis 0.')

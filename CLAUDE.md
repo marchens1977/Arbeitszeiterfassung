@@ -104,6 +104,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Nach 2. Test (Excel): Eingabefelder schwarz und normal (Vorbelegung nicht mehr grau-kursiv, eigene Einträge weiter fett); gesperrte/berechnete Felder kräftiger grau `#D9D9D9` (vorher `#F2F2F2`, wirkte wie Weiß), graue Schrift `#595959` | direkt auf `main` |
 | 2026-11-27 | Neuer Aufbau (Abschnitt 10a): offene **Eingabe-Datei** + privater **Stundenzettel** je Mitarbeiter, Ordner „Schichtplanung“/„Steuerung“; „krank“ → „abwesend (Gutschrift)“ (auch Hauptvorlage); Schichtplan erkennt Vertragsende über den Stundenzettel (Blatt `Werte`); neues Werkzeug `vorlagen-bauen.py`; Kettentest mit 57 Prüfpunkten | direkt auf `main` |
 | 2026-11-27 | Nach Test V4: Eingabe-Datei ohne Blatt „Start“ (Jahr/Urlaubsanspruch/Soll/Vertragsmonate/057 kommen per Verknüpfung aus dem Stundenzettel, Blatt `Vorgaben`), Name in den Titeln, keine Nummern, **Reststunden zum Jahresende** (rot „noch zu leisten“, grün „zu viel geleistet“, fett); Stundenzettel heißen „Stundenzettel 01–35.xlsx“; Schicht- UND Tagesplan lesen direkt die Eingabe-Dateien (kein Speichern des Stundenzettels/Schichtplans mehr nötig); ohne Vorgabe gilt „Vertrag besteht“; Kettentest 64 Prüfpunkte | direkt auf `main` |
+| 2026-11-27 | Stundenzettel: Überschriften ohne Nummern und auf allen Blättern mit Namen (Stammdaten, Tagesliste, Urlaub, Auswertung); Kettentest 68 Prüfpunkte | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -323,7 +324,8 @@ Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. **Gebaut am 27.1
 
 **Stand V5 (Wünsche nach Test V4):**
 - Eingabe-Datei: kein Blatt „Start“ mehr; Blätter Anleitung, Musterwoche, Dateneingabe, Urlaub (+ versteckt Listen, Export, Vorgaben).
-  Titel „Musterwoche … – Name“, „Dateneingabe 2027 – Name“, „Urlaubsübersicht – Name“ (keine Nummern). Name weiter aus dem Dateinamen
+  Titel „Musterwoche … – Name“, „Dateneingabe 2027 – Name“, „Urlaubsübersicht – Name“ (keine Nummern). Ebenso im Stundenzettel:
+  „Stammdaten – Name“, „Tagesliste 2027 – Name“, „Urlaubsübersicht & Abgleich – Name“, „Auswertung & Jahresbilanz 2027 – Name“. Name weiter aus dem Dateinamen
   (Hilfszellen Listen!O2:O4).
 - **Vorgaben** kommen per Verknüpfung aus dem Stundenzettel (dort Blatt `Vorgaben`: A1 Jahr, B1 Urlaubsanspruch anteilig, C1 Soll Sek.,
   Zeile 3 ohne Vertrag (1), Zeile 4 Regel-Tag Sek., Zeile 5 Wert 057 Sek. (0 wenn leer), Zeile 6 = 1 wenn 057-Wert vorhanden – leere
