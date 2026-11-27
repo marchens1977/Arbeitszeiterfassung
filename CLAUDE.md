@@ -110,7 +110,8 @@ Wichtige Stellen in `index.html`:
 - **Noch nicht in der App nachgezogen** (Excel ist Vorlage, siehe Grundregel in Abschnitt 2):
   - Spalte „Anmerkung“ (Büro/Homeoffice/Teammentor*in/krank) in Dateneingabe und Musterwoche (seit #15 in Excel).
   - Gesperrte Felder kräftig grau `#D9D9D9` (App nutzt noch `#F2F2F2`), Gilt-Spalten unauffällig, eigene Einträge fett (seit 27.11.2026 in Excel). Die Vorbelegung mit der Musterwoche hat die App schon.
-  Nutzer hat am 27.11.2026 entschieden: App „später“ anpassen.
+  Nutzer hat am 27.11.2026 entschieden: **App bleibt vorerst ganz außen vor** und wird erst am Ende nachgezogen – je nachdem,
+  wohin sich das Projekt entwickelt (evtl. braucht die App ganz andere Funktionen als das Geflecht Schichtplan/Stundenzettel/Tagesplan).
 - Schichtplan/Tagesplan: nach erfolgreichem Mini-Test beim Arbeitgeber das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
   Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
   Excel hat zusätzlich das Blatt „Anleitung“, die App erklärt in kurzen Hinweistexten.
@@ -295,3 +296,22 @@ Test beim Arbeitgeber (Mini-Paket: „Beispiel, Anna.xlsx“, „Test, Ben.xlsx�
 - [ ] MA-Tagesplan öffnen → aktualisieren → 05.01.: Anna grau „Urlaub“, Ben 13:00; Kampagnen-Feld eintragbar.
 - [ ] Ben in der Datei auf „Urlaub“ am 04.01. setzen, speichern → Schichtplan aktualisieren, speichern → Tagesplan aktualisieren → Ben grau.
 - [ ] „Kennwort zum Ändern“ an einer Datei setzen → Schichtplan aktualisiert trotzdem.
+
+### 10a. Geplanter Umbau: Eingabe-Datei (offen) + Stundenzettel (privat) – Entscheidungen vom 27.11.2026
+
+Ziel: Kollegen sehen nur Schichten, keine Vertrags-/Kontodaten. Noch NICHT gebaut – erst testet der Nutzer Mini-Paket V3.
+
+- **Abteilungsordner (alle):** je Mitarbeiter eine **Eingabe-Datei** (Musterwoche + Dateneingabe: Beginn, Pause, Anmerkung) sowie
+  Schichtplan und Tagesplan. **Ordner des Steuerers (nur er):** je Mitarbeiter ein **Stundenzettel** (Stammdaten, Urlaub, Auswertung,
+  Tagesliste), der die Einträge per Verknüpfung aus der Eingabe-Datei holt. Verknüpfungen nur Richtung privat → offen.
+- Beide Ordner liegen auf **demselben Laufwerk** (relative Pfade möglich; Ordner nicht umbenennen/verschieben).
+- **Abwesenheit:** trägt nur der **Steuerer** in die Eingabe-Datei ein, neutral als **„abwesend (Gutschrift)“** (ersetzt „krank“;
+  geplante Zeit wird gutgeschrieben). Mitarbeiter tragen Krankheit nicht selbst ein. **Keine** extra Spalte „Grund“.
+- **Eingabe-Datei zeigt nur Resturlaub in Tagen** (Anspruch / genommen / Rest) und **warnt bei zu viel Urlaub** (Anspruch in Tagen
+  steht dafür in der Eingabe-Datei). Stunden, Soll/Ist, Regel-Tag, Jahres-Basis nur im Stundenzettel. Netto an Urlaubs-/Feiertagen
+  in der Eingabe-Datei nicht anzeigen (verriete den Regel-Tag).
+- **Ausscheiden automatisch:** Schichtplan soll das Vertragsende selbst erkennen (z. B. Vertragsmonate aus dem Stundenzettel – nur
+  der Steuerer aktualisiert den Schichtplan; dort würden dann nur Ja/Nein-Merker je Monat gespeichert).
+- **Schutz:** „Kennwort zum Ändern“ je Eingabe-Datei (Mitarbeiter + Steuerer kennen es).
+- **Ausdruck/PDF** für den Mitarbeiter: Stammdaten, Urlaub, Auswertung und Tagesliste.
+- Bei Mitarbeiterwechsel: Verknüpfung im Schichtplan UND im Stundenzettel umstellen (Anleitung schreiben).
