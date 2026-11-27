@@ -51,6 +51,11 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .actions .btn{flex:1;min-width:140px}
 .pos{color:#15803d}.neg{color:#b91c1c}
+.vac-ok .mini-card{background:#dcfce7;border-color:#86efac;border-bottom-color:#15803d}
+.vac-ok .mini-card strong{color:#15803d}
+.vac-diff .mini-card{background:#fee2e2;border-color:#fca5a5;border-bottom-color:#b91c1c}
+.vac-diff .mini-card strong{color:#b91c1c}
+.no-contract td{color:#9e9e9e;font-style:italic;background:#ededed}
 </style>
 </head>
 <body>
@@ -70,8 +75,9 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <h2>Stammdaten &amp; Monatliche vertragliche Arbeitszeit <span class="yr"></span></h2>
     <p class="note">Erfasse hier den zustehenden Urlaubsanspruch, den Übertrag aus dem Vorjahr, Sondervereinbarungen sowie die monatliche vertragliche Arbeitszeit-Basis.</p>
 
-    <label for="vac">Urlaubsanspruch (Tage)</label>
+    <label for="vac">Urlaubsanspruch volles Jahr (Tage)</label>
     <input id="vac" type="text" inputmode="decimal" disabled>
+    <p class="note" id="vacInfo"></p>
 
     <label for="ct" style="margin-top:12px; font-weight:600;">Übertrag aus dem Vorjahr:</label>
     <select id="ct" disabled style="margin-top:2px;">
@@ -88,7 +94,7 @@ td select, td input{padding:6px 2px;margin:0;font-size:.85rem}
     <p class="note">Zeiten kannst du als Stunden:Minuten (z.&nbsp;B. 12:30) oder als Dezimalzahl (z.&nbsp;B. 12,5) eingeben – beim Speichern wird automatisch umgerechnet.</p>
 
     <h3>Monatliche vertragliche Arbeitszeit &amp; Orientierungswerte</h3>
-    <p class="note">Ein leeres Feld übernimmt den Wert des Vormonats.</p>
+    <p class="note">Ein leeres Feld übernimmt den Wert des Vormonats. Scheidet jemand unter dem Jahr aus (oder fängt später an), in diesen Monaten 0 eintragen: Sie zählen dann nicht („kein Vertrag“), und der Urlaub wird anteilig gekürzt.</p>
     <table>
       <thead><tr><th>Monat</th><th>Vertragliche Jahres-Basis (Std) / Orientierung</th></tr></thead>
       <tbody id="monthlyAnnualBody"></tbody>
@@ -330,6 +336,19 @@ function annualSecSum() {
   return Math.round(sum);
 }
 
+/* Monat mit Vertrag = Jahres-Basis > 0 (0 = ausgeschieden / noch nicht eingetreten) */
+const isContractMonth = monthIdx => getMonthAnnualSec(monthIdx) > 0;
+const contractMonthCount = () => { let n = 0; for (let i = 0; i < 12; i++) if (isContractMonth(i)) n++; return n; };
+
+/* Anteiliger Urlaub: Anspruch × Vertragsmonate ÷ 12; ab einem halben Tag aufrunden (BUrlG § 5),
+   kleinere Bruchteile bleiben (auf 2 Stellen). Gleiche Regel wie in der Excel-Datei. */
+function proratedVacDays(fullDays, months) {
+  const raw = Math.round(fullDays * months / 12 * 1e6) / 1e6;
+  const frac = raw - Math.floor(raw);
+  return frac >= 0.5 - 1e-9 ? Math.ceil(raw) : Math.round(raw * 100) / 100;
+}
+const fmtDays = n => String(Math.round(n * 100) / 100).replace('.', ',');
+
 function dayTargetSecForMonth(monthIdx) {
   return Math.round(getMonthAnnualSec(monthIdx) / 52 / 5);
 }
@@ -469,11 +488,13 @@ function computeStats() {
   const planNet = new Array(12).fill(0);      // Plan-Netto je Monat (ohne Urlaub)
   const vacDays = new Array(12).fill(0);      // genommene Urlaubstage je Monat
   const vacSec = new Array(12).fill(0);       // genommene Urlaubsstunden je Monat
-  let totalClaimSec = 0;
+  let totalClaimSec = 0, contractDayCount = 0;
 
   days.forEach(d => {
+    if (!isContractMonth(d.m)) return;          // kein Vertrag: zählt nichts
     const target = dayTargetSecForMonth(d.m);
     totalClaimSec += target;
+    contractDayCount++;
     const dat = getDayData(d);
     if (dat.s === 'U') {
       vacDays[d.m]++;
@@ -487,8 +508,10 @@ function computeStats() {
     (st.monthlyActual[i] !== undefined && st.monthlyActual[i] !== '') ? toSec(st.monthlyActual[i]) : p);
 
   const contractSec = annualSecSum();
-  const avgDaySec = totalClaimSec / days.length;
-  const totalClaimDays = Math.max(0, num(st.vac));
+  const avgDaySec = contractDayCount ? totalClaimSec / contractDayCount : 0;  // Ø Regel-Tag nur der Vertragsmonate
+  const fullClaimDays = Math.max(0, num(st.vac));
+  const contractMonths = contractMonthCount();
+  const totalClaimDays = proratedVacDays(fullClaimDays, contractMonths);
   const totalClaimHoursSec = Math.round(totalClaimDays * avgDaySec);
   const takenDays = vacDays.reduce((a, b) => a + b, 0);
   const takenSec = vacSec.reduce((a, b) => a + b, 0);
@@ -502,8 +525,8 @@ function computeStats() {
 
   return {
     planNet, vacDays, vacSec, actualNet,
-    contractSec, totalClaimDays, totalClaimHoursSec, takenDays, takenSec,
-    remainingDays: totalClaimDays - takenDays, remainingSec: totalClaimHoursSec - takenSec,
+    contractSec, fullClaimDays, contractMonths, totalClaimDays, totalClaimHoursSec, takenDays, takenSec,
+    remainingDays: Math.round((totalClaimDays - takenDays) * 100) / 100, remainingSec: totalClaimHoursSec - takenSec,
     carrySec, agreedOtSec, unpaidVacSec, nettoTargetSec, totalPlanNet, totalActualNet
   };
 }
@@ -597,9 +620,11 @@ function updateMonthlyInfo(i) {
 
 function summary0() {
   const x = computeStats();
+  $('vacInfo').innerHTML = x.contractMonths === 12 ? '' :
+    `Anteilig ${x.contractMonths} von 12 Monaten: <b>${fmtDays(x.totalClaimDays)} Tage</b> (ab einem halben Tag wird aufgerundet)`;
   $('sm0').innerHTML =
     `Vertragliche Arbeitszeit: <b>${fmtT(x.contractSec)}</b><br>` +
-    `− Zustehender Urlaub (${x.totalClaimDays} Tage): <b>${fmtT(x.totalClaimHoursSec)}</b><br>` +
+    `− Zustehender Urlaub (${fmtDays(x.totalClaimDays)} Tage): <b>${fmtT(x.totalClaimHoursSec)}</b><br>` +
     `${st.ct === 'plus' ? '−' : '+'} Übertrag aus Vorjahr: <b>${fmtT(x.carrySec)}</b><br>` +
     `+ vereinbarte Überstunden ${Y}: <b>${fmtT(x.agreedOtSec)}</b><br>` +
     `− unbezahlter Urlaub in ${Y}: <b>${fmtT(x.unpaidVacSec)}</b><br>` +
@@ -609,10 +634,13 @@ function summary0() {
 /* --- Reiter 2: Urlaub --- */
 function renderVacationTab() {
   const x = computeStats();
+  /* Grün = genau der zustehende Urlaub ist eingetragen, Rot = Abweichung */
+  const vacOk = Math.round(x.takenDays * 100) === Math.round(x.totalClaimDays * 100);
+  $('vacCards').className = 'grid-cards ' + (vacOk ? 'vac-ok' : 'vac-diff');
   $('vacCards').innerHTML = `
-    <div class="mini-card"><span>Zustehender Urlaub</span><strong>${x.totalClaimDays} Tage</strong></div>
+    <div class="mini-card"><span>Zustehender Urlaub</span><strong>${fmtDays(x.totalClaimDays)} Tage</strong></div>
     <div class="mini-card"><span>Genommener Urlaub</span><strong>${x.takenDays} Tage</strong></div>
-    <div class="mini-card"><span>Verbleibender Urlaub</span><strong class="${x.remainingDays < 0 ? 'neg' : ''}">${x.remainingDays} Tage</strong></div>
+    <div class="mini-card"><span>Verbleibender Urlaub</span><strong>${fmtDays(x.remainingDays)} Tage</strong></div>
   `;
   let monthHtml = '';
   MN.forEach((mName, i) => {
@@ -622,9 +650,9 @@ function renderVacationTab() {
   $('vacMonthBody').innerHTML = monthHtml;
   $('vacSummaryBox').innerHTML =
     `<b>Urlaubsabgleich Gesamtjahr:</b><br>` +
-    `• Zustehender Urlaub: <b>${x.totalClaimDays} Tage</b> (${fmtT(x.totalClaimHoursSec)})<br>` +
+    `• Zustehender Urlaub: <b>${fmtDays(x.totalClaimDays)} Tage</b> (${fmtT(x.totalClaimHoursSec)})<br>` +
     `• Bereits genommen: <b>${x.takenDays} Tage</b> (${fmtT(x.takenSec)})<br>` +
-    `• Resturlaub: <b>${x.remainingDays} Tage</b> (${fmtT(x.remainingSec)})`;
+    `• Resturlaub: <b>${fmtDays(x.remainingDays)} Tage</b> (${fmtT(x.remainingSec)})`;
 }
 
 /* --- Auswahllisten --- */
@@ -693,6 +721,11 @@ function toggleEdit3() {
 
 let todayStart = null;
 function dayRowHtml(d) {
+  if (!isContractMonth(d.m)) {
+    let lbl = `${WD[d.w]} ${d.dd}.${pad(d.m + 1)}.`;
+    if (holidays[d.k]) lbl += ` (${holidays[d.k]})`;
+    return `<tr id="row_${d.k}" class="no-contract"><td>${lbl}</td><td>kein Vertrag</td><td>–</td><td class="r">${fmtT(0)}</td></tr>`;
+  }
   const dat = getDayData(d);
   const planSec = calcNetSec(dat.s, dat.p, d.m);
   const rowClass = d.dateObj >= todayStart ? 'future-row' : '';
@@ -748,7 +781,7 @@ function setDay(k, f, v) {
   if (f === 's' && v === 'U' && getDayData(dObj).s !== 'U') {
     const x = computeStats();
     if (x.takenDays >= x.totalClaimDays) {
-      alert(`Der maximale Urlaubsanspruch von ${x.totalClaimDays} Tagen ist bereits erreicht!`);
+      alert(`Der maximale Urlaubsanspruch von ${fmtDays(x.totalClaimDays)} Tagen ist bereits erreicht!`);
       refreshDayRow(dObj);
       return;
     }
@@ -807,7 +840,7 @@ function renderOut() {
 
   $('sm3').innerHTML =
     `Vertragliche Arbeitszeit: <b>${fmtT(x.contractSec)}</b><br>` +
-    `Vertraglicher Urlaub: <b>${x.totalClaimDays} Tage</b> (${fmtT(x.totalClaimHoursSec)})<br>` +
+    `Vertraglicher Urlaub: <b>${fmtDays(x.totalClaimDays)} Tage</b> (${fmtT(x.totalClaimHoursSec)})<br>` +
     `Genommener Urlaub: <b>${x.takenDays} Tage</b> (${fmtT(x.takenSec)})<br>` +
     `${st.ct === 'plus' ? '−' : '+'} Übertrag aus Vorjahr: <b>${fmtT(x.carrySec)}</b><br>` +
     `vereinbarte Überstunden ${Y}: <b>${fmtT(x.agreedOtSec)}</b><br>` +
