@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Baut aus der Hauptvorlage excel/Arbeitszeiterfassung.xlsx die zwei Vorlagen für den Abteilungsbetrieb:
 
-  excel/vorlagen/Eingabe.xlsx              – OFFENE Eingabe-Datei (wird „Platz 01.xlsx“ … „Platz 35.xlsx“, Ordner „Schichtplanung“):
+  excel/vorlagen/Eingabe.xlsx              – OFFENE Eingabe-Datei (wird „MA 01.xlsx“ … „MA 35.xlsx“, Ordner „Schichtplanung“):
                                              Musterwoche, Dateneingabe, Urlaub in Tagen (mit Warnung) – KEINE Vertrags-/Stundendaten.
                                              Platz-Nummer aus dem Dateinamen; Name und Vorgaben aus „000 Inhaltsverzeichnis.xlsx“.
-  excel/vorlagen/Stundenzettel-Vorlage.xlsx – PRIVATER Stundenzettel (wird „Stundenzettel 01.xlsx“ …, Ordner „Steuerung“):
+  excel/vorlagen/Stundenzettel-Vorlage.xlsx – PRIVATER Stundenzettel (wird „MA 01 (Admin).xlsx“ …, Ordner „Steuerung“):
                                              Stammdaten, Urlaub, Auswertung, Tagesliste. Nummer aus dem Dateinamen; Name und
                                              Einträge aus „002 Schichtplan.xlsx“ (eigene Spalten per INDEX).
 Die Verknüpfungen selbst (externalLink) setzt plaene-erzeugen.py. Alle Kopien einer Vorlage sind gleich – deshalb zeigen
@@ -27,7 +27,7 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 HAUPT = os.path.join(HIER, '..', 'excel', 'Arbeitszeiterfassung.xlsx')
 ZIEL = os.path.join(HIER, '..', 'excel', 'vorlagen')
 GRAU = PatternFill('solid', fgColor='FFD9D9D9')
-MAXP = 35                       # Plätze (Platz 01 … 35); Bereichsgrößen der Verknüpfungen hängen daran
+MAXP = 35                       # Plätze (MA 01 … 35); Bereichsgrößen der Verknüpfungen hängen daran
 IV_LETZTE = 'BA'                # letzte Spalte im Blatt Vorgaben des Inhaltsverzeichnisses (5 + 12 × 4 = 53)
 SP_LETZTE = 'DB'                # letzte Spalte im Blatt Daten des Schichtplans (1 + 3 × 35 = 106)
 s = Side(style='thin', color='FFBFBFBF'); RAND = Border(left=s, right=s, top=s, bottom=s)
@@ -77,7 +77,7 @@ def eingabe():
 
     # --- Vorgaben aus dem Inhaltsverzeichnis (versteckt). Alle Eingabe-Dateien sind Kopien EINER Vorlage und zeigen auf
     # dasselbe Ziel („000 Inhaltsverzeichnis.xlsx“, Blatt Vorgaben: eine Zeile je Platz). Die eigene Zeile ergibt sich aus der
-    # Platz-Nummer im Dateinamen („Platz 07.xlsx“ → 7, Listen!O10). Layout dort: A Nr, B Name, C Jahr, D Urlaubsanspruch,
+    # Platz-Nummer im Dateinamen („MA 07.xlsx“ → 7, Listen!O10). Layout dort: A Nr, B Name, C Jahr, D Urlaubsanspruch,
     # E Soll (Sek.), ab F je Monat 4 Spalten (ohne Vertrag, Regel-Tag Sek., 057 Sek., 057 vorhanden).
     vg = wb.create_sheet('Vorgaben')
     hol = lambda sp: f'=INDEX([1]Vorgaben!$A$2:${IV_LETZTE}${1 + MAXP},Listen!$O$10,{sp})'
@@ -96,9 +96,8 @@ def eingabe():
     ls['O2'] = '=CELL("filename",A1)'
     ls['O3'] = st['H3'].value.replace('G3', 'O2')
     ls['O4'] = '=IFERROR(IF(OR(ISNUMBER(Vorgaben!D1),Vorgaben!D1=""),"",TRIM(Vorgaben!D1)),"")'   # Name aus dem Inhaltsverzeichnis
-    # Platz-Nummer aus dem Dateinamen „Platz 07.xlsx“ (0 = Dateiname falsch oder nicht lesbar)
-    ls['O10'] = (f'=IFERROR(IF(LEFT(O3,6)="Platz ",IF(AND(VALUE(TRIM(MID(O3,7,FIND(".",O3&".",7)-7)))>=1,'
-                 f'VALUE(TRIM(MID(O3,7,FIND(".",O3&".",7)-7)))<={MAXP}),VALUE(TRIM(MID(O3,7,FIND(".",O3&".",7)-7))),0),0),0)')
+    # Platz-Nummer aus dem Dateinamen „MA 07.xlsx“ (0 = Dateiname falsch oder nicht lesbar, z. B. „MA 07 (Admin).xlsx“)
+    ls['O10'] = (f'=IFERROR(IF(LEFT(O3,3)="MA ",IF(AND(VALUE(TRIM(MID(O3,4,FIND(".",O3&".",4)-4)))>=1,VALUE(TRIM(MID(O3,4,FIND(".",O3&".",4)-4)))<={MAXP}),VALUE(TRIM(MID(O3,4,FIND(".",O3&".",4)-4))),0),0),0)')
     # IFERROR: kommt über die Verknüpfung ein Fehler (Stundenzettel noch nie gespeichert/nicht erreichbar), gilt „keine Vorgabe“
     ls['O5'] = '=IFERROR(IF(N(Vorgaben!A1)>2000,Vorgaben!A1,2027),2027)'
     ls['O6'] = '=IFERROR(IF(ISNUMBER(Vorgaben!B1),Vorgaben!B1,0),0)'
@@ -151,7 +150,7 @@ def eingabe():
     rot = DifferentialStyle(font=Font(color='FFC00000', bold=True))
     d.conditional_formatting.add('H3:J3', Rule(type='expression', dxf=gruen, formula=['AND(SollSek<>0,Listen!$O$9<0)']))
     d.conditional_formatting.add('H3:J3', Rule(type='expression', dxf=rot, formula=['AND(SollSek<>0,Listen!$O$9>0)']))
-    d['A4'] = (f'=IF(Listen!$O$10=0,"Achtung: Dateiname falsch oder nicht lesbar – die Datei muss „Platz 01.xlsx“ … „Platz {MAXP}.xlsx“ '
+    d['A4'] = (f'=IF(Listen!$O$10=0,"Achtung: Dateiname falsch oder nicht lesbar – die Datei muss „MA 01.xlsx“ … „MA {MAXP}.xlsx“ '
                f'heißen (Excel am PC).",'
                'IF(AND(UrlaubAnspruchTage>0,COUNTIF(G6:G267,"Urlaub")>UrlaubAnspruchTage),"Achtung: "&COUNTIF(G6:G267,"Urlaub")&'
                '" Urlaubstage eingetragen – Anspruch: "&UrlaubAnspruchTage&" Tage!",""))')
@@ -205,14 +204,14 @@ def stundenzettel():
     wb['Musterwoche'].sheet_state = 'hidden'
 
     # Einträge kommen aus dem Schichtplan (der sammelt alle Eingabe-Dateien). Alle Stundenzettel sind Kopien EINER Vorlage;
-    # die eigenen Spalten ergeben sich aus der Nummer im Dateinamen („Stundenzettel 07.xlsx“ → 7, Daten!B2).
+    # die eigenen Spalten ergeben sich aus der Nummer im Dateinamen („MA 07 (Admin).xlsx“ → 7, Daten!B2).
     st = wb['Stammdaten']
     da = wb.create_sheet('Daten')
     da['A1'] = 'Name'; da['A2'] = 'Nr. (Dateiname)'; da['A3'] = 'Werktag → Start / Pause / Anmerkung (roh)'
     da['E1'] = '=CELL("filename",A1)'
     da['F1'] = st['H3'].value.replace('G3', 'E1')
-    n_aus = 'VALUE(TRIM(MID(F1,15,FIND(".",F1&".",15)-15)))'
-    da['B2'] = f'=IFERROR(IF(LEFT(F1,14)="Stundenzettel ",IF(AND({n_aus}>=1,{n_aus}<={MAXP}),{n_aus},0),0),0)'
+    n_aus = 'VALUE(TRIM(MID(F1,4,SEARCH(" (Admin).",F1&" (Admin).")-4)))'
+    da['B2'] = f'=IFERROR(IF(LEFT(F1,3)="MA ",IF(AND({n_aus}>=1,{n_aus}<={MAXP}),{n_aus},0),0),0)'
     da['B1'] = f'=INDEX([1]Mitarbeiter!$C$4:$C${3 + MAXP},$B$2)'
     for r in range(4, 266):
         k = r - 3
@@ -249,7 +248,7 @@ def stundenzettel():
 
     st['B3'] = '=IFERROR(IF(OR(ISNUMBER(Daten!B1),Daten!B1=""),"",Daten!B1),"")'
     st['G3'] = None; st['H3'] = None
-    st['D3'] = (f'=IF(Daten!B2=0,"Dateiname falsch oder nicht lesbar – die Datei muss „Stundenzettel 01.xlsx“ … „Stundenzettel {MAXP}.xlsx“ heißen.",'
+    st['D3'] = (f'=IF(Daten!B2=0,"Dateiname falsch oder nicht lesbar – die Datei muss „MA 01 (Admin).xlsx“ … „MA {MAXP} (Admin).xlsx“ heißen.",'
                 'IF(B3="","Noch kein Name – im Inhaltsverzeichnis eintragen, dann Schichtplan und hier aktualisieren '
                 '(Daten → Links bearbeiten → Werte aktualisieren).",""))')
 

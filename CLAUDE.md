@@ -108,7 +108,8 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Anleitungs-Blätter entfernt (Eingabe-Datei, Stundenzettel, Schichtplan) und Erklärtext in der Tagesplan-Übersicht gestrichen – der Steuerer erklärt das Tool bei der Einweisung; Kettentest 70 Prüfpunkte | direkt auf `main` |
 | 2026-11-27 | Nach Test V6: `#BEZUG!` in der ganzen Dateneingabe, wenn die Verknüpfung zum Stundenzettel (noch) einen Fehler liefert → alle Formeln, die Verknüpfungen auswerten, mit `IFERROR` abgesichert (Eingabe-Datei: „keine Vorgabe“, Stundenzettel: leer, Schicht-/Tagesplan: leer). Neu: `Steuerung/Inhaltsverzeichnis.xlsx` (Stundenzettel-Nr. → Name, Klick öffnet die Datei); `plaene-erzeugen.py --testnamen` (35 erfundene „Mustermann, Vorname“ mit unterschiedlichen Musterwochen). Großes Test-Paket per E-Mail; Kettentest 84 Prüfpunkte | direkt auf `main` |
 | 2026-11-27 | Test des großen Pakets V7 beim Arbeitgeber abgeschlossen (35 Testpersonen, schnell genug); Beobachtungen 2–6 im Tagebuch gesammelt (u. a. Verknüpfung geht bei falscher Reihenfolge verloren), Umsetzung in der nächsten Sitzung | – |
-| 2026-11-28 | Excel-Paket V8 „Vorlagen-Prinzip“ (Wunsch des Nutzers): Namen NUR im `000 Inhaltsverzeichnis` (Steuerer trägt ein, niemand wird überschrieben, Neue unten dazu); Eingabe-Dateien heißen fest „Platz 01–35“, Stundenzettel „01–35“ und erkennen ihre Nummer am Dateinamen; Nutzer bekommt nur 5 Dateien und kopiert selbst; Verknüpfungen nur noch über die Sammel-Dateien (Inhaltsverzeichnis, `002 Schichtplan`); `001 MA-Tagesplan` nach Platz-Nummer; löst Beobachtung 4/5 (Kopien einer in Excel gespeicherten Vorlage). Kettentest neu (Stand V8) | direkt auf `main` |
+| 2026-11-28 | Excel-Paket V8 „Vorlagen-Prinzip“ (Wunsch des Nutzers): Namen NUR im `000 Inhaltsverzeichnis` (Steuerer trägt ein, niemand wird überschrieben, Neue unten dazu); Eingabe-Dateien heißen fest „Platz 01–35“, Stundenzettel „01–35“ (seit V9: „MA 01“ / „MA 01 (Admin)“) und erkennen ihre Nummer am Dateinamen; Nutzer bekommt nur 5 Dateien und kopiert selbst; Verknüpfungen nur noch über die Sammel-Dateien (Inhaltsverzeichnis, `002 Schichtplan`); `001 MA-Tagesplan` nach Platz-Nummer; löst Beobachtung 4/5 (Kopien einer in Excel gespeicherten Vorlage). Kettentest neu (Stand V8) | direkt auf `main` |
+| 2026-11-28 | Paket V9: Dateinamen „MA 01–35.xlsx“ (Mitarbeitende) und „MA 01–35 (Admin).xlsx“ (Steuerer) statt „Platz“/„Stundenzettel“; Kettentest 112 Prüfpunkte; V8 ersetzt | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
@@ -123,7 +124,7 @@ Wichtige Stellen in `index.html`:
 - Schichtplan/Tagesplan: nach erfolgreichem Mini-Test beim Arbeitgeber das volle Paket erzeugen (35 Plätze, 52 Wochen, alle Tage) und schicken.
   Bewusste Unterschiede, weil technisch nicht anders möglich: In der App wird der Mitarbeitername eingetippt (kein Dateiname);
   Excel hat zusätzlich das Blatt „Anleitung“, die App erklärt in kurzen Hinweistexten.
-- **Nächster Schritt:** Nutzer testet Paket V8 (Vorlagen-Prinzip) beim Arbeitgeber – Abschnitt 10b, Test-Liste V8. Offen: Beobachtung 6b (Verknüpfungen in versteckten Blättern).
+- **Nächster Schritt:** Nutzer testet Paket V9 (ab Montag) (Vorlagen-Prinzip) beim Arbeitgeber – Abschnitt 10b, Test-Liste V8. Offen: Beobachtung 6b (Verknüpfungen in versteckten Blättern).
 - Produktivstart Excel-Paket: echte Ordner-Anordnung (Schichtplanung offen, Steuerung privat, nicht nebeneinander) einbauen – Details in Abschnitt 10, „Für den Produktivstart merken“.
 - Excel-Version und App können auseinanderlaufen: Wird das Rechenmodell der App geändert, muss die Excel-Datei
   von Hand nachgezogen werden (oder bewusst nicht). Ein automatischer Vergleich App ↔ Excel fehlt noch.
@@ -169,9 +170,9 @@ Vorhandene Werkzeuge (benötigen Node.js und Playwright mit Chromium; in der Cla
 | `node werkzeuge/name-und-aussehen.test.js` | Angleichung an Excel: Mitarbeitername (Hinweis ohne Komma, große Anzeige, bleibt nach Neuladen, steckt in der Sicherung), Farben gelb/grau/hellblau, Uhrzeiten 11:00–17:00, Reiter-/Überschriften; macht Handy-Screenshots. Endet mit „ERGEBNIS: alles in Ordnung“. |
 | `node werkzeuge/offline-app.test.js` | Startet einen lokalen Webserver und prüft Manifest, Symbole, Offline-Helfer und den Start ohne Internet |
 | `python3 werkzeuge/excel-pruefen.py [datei.xlsx] [--jahresbasis WERT] [--anspruch TAGE] [--ab-monat N] [--urlaub K]` | Rechnet die Excel-Datei mit LibreOffice neu und gibt Soll, Regel-Werte, Urlaub und Auswertung aus. Zum Vergleich alte und neue Datei prüfen und die Ausgaben mit `diff` vergleichen. `--ab-monat 7` = Ausscheiden ab Juli (Erwartung bei 30 Tagen: 15 Tage, 117:00:00), `--urlaub 15` trägt 15 Urlaubstage im Januar ein. |
-| `python3 werkzeuge/plaene.test.py` | Ganze Kette (Abschnitt 10b, Stand V8 „Vorlagen-Prinzip“): 4 Plätze als Kopien je einer Vorlage; Verknüpfungen, die Fehler liefern (kein `#BEZUG!`); falscher Dateiname → Warnung; Nummer aus dem Dateinamen; Inhaltsverzeichnis sammelt Vorgaben; Schichtplan (Namen aus dem Inhaltsverzeichnis, nach Nachname) und Tagesplan (nach Platz-Nummer); Stundenzettel aus dem Schichtplan (muss **genau wie die Hauptvorlage** rechnen, 057-Wert); Eingabe holt Name + Vorgaben (Reststunden = Stundenzettel sekundengenau, Urlaubswarnung); Vertragsende. Aktualisieren wie Excel (gespeicherte Werte, auch Bereiche für INDEX). 110 Prüfpunkte, Ende „ERGEBNIS: alles in Ordnung“ (ca. 3 Min). |
+| `python3 werkzeuge/plaene.test.py` | Ganze Kette (Abschnitt 10b, Stand V8 „Vorlagen-Prinzip“): 4 Plätze als Kopien je einer Vorlage; Verknüpfungen, die Fehler liefern (kein `#BEZUG!`); falscher Dateiname → Warnung; Nummer aus dem Dateinamen; Inhaltsverzeichnis sammelt Vorgaben; Schichtplan (Namen aus dem Inhaltsverzeichnis, nach Nachname) und Tagesplan (nach Platz-Nummer); Stundenzettel aus dem Schichtplan (muss **genau wie die Hauptvorlage** rechnen, 057-Wert); Eingabe holt Name + Vorgaben (Reststunden = Stundenzettel sekundengenau, Urlaubswarnung); Vertragsende. Aktualisieren wie Excel (gespeicherte Werte, auch Bereiche für INDEX). 112 Prüfpunkte, Ende „ERGEBNIS: alles in Ordnung“ (ca. 3 Min). |
 | `python3 werkzeuge/vorlagen-bauen.py` | Kein Test: baut aus der Hauptvorlage `excel/vorlagen/Eingabe.xlsx` und `Stundenzettel-Vorlage.xlsx` neu – **nach jeder Änderung an der Hauptvorlage ausführen**, danach `plaene.test.py` |
-| `python3 werkzeuge/plaene-erzeugen.py --ordner ORDNER [...]` | Kein Test: erzeugt das Paket V8 – `Platz 01.xlsx`, `Stundenzettel 01.xlsx`, `000 Inhaltsverzeichnis.xlsx`, `001 MA-Tagesplan.xlsx`, `002 Schichtplan.xlsx` (Optionen siehe Kopf der Datei; Versand-Paket: `--plaetze 35 --testnamen` bzw. ohne `--testnamen` = leeres Inhaltsverzeichnis; `--kopien` legt zusätzlich alle Kopien 02 … an, nur für Tests) |
+| `python3 werkzeuge/plaene-erzeugen.py --ordner ORDNER [...]` | Kein Test: erzeugt das Paket V9 – `MA 01.xlsx`, `MA 01 (Admin).xlsx`, `000 Inhaltsverzeichnis.xlsx`, `001 MA-Tagesplan.xlsx`, `002 Schichtplan.xlsx` (Optionen siehe Kopf der Datei; Versand-Paket: `--plaetze 35 --testnamen` bzw. ohne `--testnamen` = leeres Inhaltsverzeichnis; `--kopien` legt zusätzlich alle Kopien 02 … an, nur für Tests) |
 | `werkzeuge/xlsx_spalten.py` | Kein Test: Hilfsfunktion `spalten_einfuegen(wb, blatt, idx)` – fügt Spalten ein und zieht alle Bezüge (Formeln, Namen, Formatierung, Prüfungen, Verbindungen) mit; danach immer `excel-pruefen.py` alt/neu vergleichen |
 | `node werkzeuge/symbole-erzeugen.js` | Kein Test: erzeugt aus `icons/icon.svg` alle PNG-Symbole neu (nur nach Änderung am Symbol) |
 
@@ -325,7 +326,7 @@ Test Mini-Paket V4 (erledigt; Ergebnis führte zu V5):
 
 ### Übergabe für die nächste Sitzung (Stand 27.11.2026)
 
-**>>> HIER WEITERMACHEN (Stand 28.11.2026): Beobachtungen 2, 4, 5, 6a sind mit Paket V8 („Vorlagen-Prinzip“, Abschnitt 10b) umgesetzt. Paket V8 (5 Dateien) ist per E-Mail beim Nutzer; er testet es beim Arbeitgeber. Ablauf wie immer: Beobachtungen nur sammeln, bei „Test fertig“ bewerten. Offen: 6b (Verknüpfungen in versteckten Blättern), Ordner-Anordnung für den Produktivstart.**
+**>>> HIER WEITERMACHEN (Stand 28.11.2026): Beobachtungen 2, 4, 5, 6a sind mit Paket V8 („Vorlagen-Prinzip“, Abschnitt 10b) umgesetzt. Paket V9 (5 Dateien, Namen „MA 01“ / „MA 01 (Admin)“; V8 ist überholt) ist per E-Mail beim Nutzer; er testet es ab Montag beim Arbeitgeber. Ablauf wie immer: Beobachtungen nur sammeln, bei „Test fertig“ bewerten. Offen: 6b (Verknüpfungen in versteckten Blättern), Ordner-Anordnung für den Produktivstart.**
 
 Ergebnis Test V7 (35 Testpersonen, Excel beim Arbeitgeber):
 - Funktioniert: Eingabe-Datei → Stundenzettel → Inhaltsverzeichnis (bei richtiger Reihenfolge); Schichtplan und Tagesplan zeigen alle 35
@@ -408,16 +409,16 @@ Wunsch des Nutzers: **eine Quelle für die Namen** und **keine großen Pakete** 
 - **Namen nur im `000 Inhaltsverzeichnis.xlsx`** (Ordner „Steuerung“, Spalte B gelb). Im laufenden Jahr wird **niemand gelöscht oder
   überschrieben**, auch nach dem Ausscheiden nicht (Ausscheiden = Jahres-Basis 0 im Stundenzettel); Neue kommen in die nächste freie Zeile.
   Aktuell 22 Mitarbeitende, 35 Plätze reichen. Echte Namen trägt der Nutzer selbst ein – sie kommen nie zu Claude.
-- **Feste Dateinamen** (nie umbenennen, sonst brechen Verknüpfungen): `Schichtplanung/Platz 01.xlsx … Platz 35.xlsx`, `001 MA-Tagesplan.xlsx`,
-  `002 Schichtplan.xlsx`; `Steuerung/Stundenzettel 01.xlsx … 35.xlsx`, `000 Inhaltsverzeichnis.xlsx` (Nummern vorne: Wunsch des Nutzers).
-- **Vorlagen-Prinzip:** Der Nutzer bekommt nur 5 Dateien und kopiert Platz 01 / Stundenzettel 01 selbst. Jede Datei liest ihre **Nummer aus
+- **Feste Dateinamen** (nie umbenennen, sonst brechen Verknüpfungen): `Schichtplanung/MA 01.xlsx … MA 35.xlsx`, `001 MA-Tagesplan.xlsx`,
+  `002 Schichtplan.xlsx`; `Steuerung/MA 01 (Admin).xlsx … MA 35 (Admin).xlsx`, `000 Inhaltsverzeichnis.xlsx` (Nummern vorne: Wunsch des Nutzers). **Dateinamen „MA 01“ / „MA 01 (Admin)“ seit V9 (Wunsch des Nutzers, 28.11.2026):** nicht zweimal derselbe Name, weil Excel zwei gleichnamige Dateien nicht gleichzeitig öffnen kann; „(Admin)“ ohne Rücksicht auf Groß-/Kleinschreibung. Eine Admin-Datei in „Schichtplanung“ bzw. eine Datei ohne „(Admin)“ in „Steuerung“ zeigt die Warnung „Dateiname falsch“.
+- **Vorlagen-Prinzip:** Der Nutzer bekommt nur 5 Dateien und kopiert MA 01 / MA 01 (Admin) selbst. Jede Datei liest ihre **Nummer aus
   dem eigenen Dateinamen** (`CELL("filename")`; Eingabe `Listen!O10`, Stundenzettel `Daten!B2`; falscher Name → Warnung in Dateneingabe A4
   bzw. Stammdaten D3). Weil eine Verknüpfung fest auf EINE Datei zeigt, verbinden sich die Kopien nur mit den Sammel-Dateien:
-  - Platz NN (Export E–G, roh) → `002 Schichtplan` (Blatt `Daten`, daraus `Werte` = Anzeige) und → `001 MA-Tagesplan` (gleich aufgebaut)
+  - MA NN (Export E–G, roh) → `002 Schichtplan` (Blatt `Daten`, daraus `Werte` = Anzeige) und → `001 MA-Tagesplan` (gleich aufgebaut)
   - `000 Inhaltsverzeichnis` (Namen) → Schicht- und Tagesplan (Blatt `Mitarbeiter`)
-  - `002 Schichtplan` (`Daten`, `Mitarbeiter`) → Stundenzettel NN (eigene Spalten per `INDEX` über den ganzen Bereich)
-  - Stundenzettel NN (`Vorgaben`) → `000 Inhaltsverzeichnis` (verstecktes Blatt `Vorgaben`, Zeile NN)
-  - `000 Inhaltsverzeichnis` (`Vorgaben`: Name, Jahr, Urlaub, Soll, je Monat 4 Werte) → Platz NN (eigene Zeile per `INDEX`)
+  - `002 Schichtplan` (`Daten`, `Mitarbeiter`) → MA NN (Admin) (eigene Spalten per `INDEX` über den ganzen Bereich)
+  - MA NN (Admin) (`Vorgaben`) → `000 Inhaltsverzeichnis` (verstecktes Blatt `Vorgaben`, Zeile NN)
+  - `000 Inhaltsverzeichnis` (`Vorgaben`: Name, Jahr, Urlaub, Soll, je Monat 4 Werte) → MA NN (eigene Zeile per `INDEX`)
   Bereichsgrößen sind fest auf 35 Plätze (`MAXP` in `vorlagen-bauen.py` und `plaene-erzeugen.py`).
 - **Tagesplan fest nach Platz-Nummer** (Neue erscheinen unten, Kampagnen-Einträge verrutschen nicht); Schichtplan weiter nach Nachname.
 - Löst Beobachtung 4/5: alle Kopien stammen von einer Vorlage, die einmal in Excel gespeichert wurde → jede Quelle hat gespeicherte Werte.
@@ -426,26 +427,26 @@ Wunsch des Nutzers: **eine Quelle für die Namen** und **keine großen Pakete** 
   **speichern**. Mitarbeitende müssen ihre Platz-Nummer kennen. Ändert Claude später (im Produktivbetrieb) eine Vorlage, bringen neue Dateien
   die Einträge der Mitarbeitenden nicht mit → Änderungen dann nur mit Übertragen der Daten.
 - **Reihenfolge beim ersten Mal (Steuerer, Excel am PC):**
-  1. Dateien verteilen: `Platz 01`, `001`, `002` nach „Schichtplanung“; `Stundenzettel 01`, `000` nach „Steuerung“.
-  2. `Platz 01` öffnen → nur „Bearbeitung aktivieren“ (NICHT „Inhalte aktivieren“) → speichern → schließen. Ebenso `Stundenzettel 01`.
-  3. Im Explorer kopieren und umbenennen: `Platz 02` … `Platz 35`, `Stundenzettel 02` … `35` (genau so, mit führender Null).
+  1. Dateien verteilen: `MA 01`, `001`, `002` nach „Schichtplanung“; `MA 01 (Admin)`, `000` nach „Steuerung“.
+  2. `MA 01` öffnen → nur „Bearbeitung aktivieren“ (NICHT „Inhalte aktivieren“) → speichern → schließen. Ebenso `MA 01 (Admin)`.
+  3. Im Explorer kopieren und umbenennen: `MA 02` … `MA 35`, `MA 02 (Admin)` … `MA 35 (Admin)` (genau so: Leerzeichen, führende Null).
   4. `000 Inhaltsverzeichnis` öffnen → Bearbeitung + Inhalte aktivieren → Workbook Links → aktualisieren → Namen prüfen/eintragen → speichern.
   5. `002 Schichtplan` öffnen → aktualisieren → **speichern**. 6. `001 MA-Tagesplan` öffnen → aktualisieren → speichern.
   7. Stundenzettel öffnen (Explorer) → aktualisieren → Name prüfen → Stammdaten pflegen → speichern.
-  8. `000 Inhaltsverzeichnis` aktualisieren → speichern. 9. Platz-Dateien öffnen → aktualisieren → Name im Titel, Reststunden → speichern.
+  8. `000 Inhaltsverzeichnis` aktualisieren → speichern. 9. MA-Dateien öffnen → aktualisieren → Name im Titel, Reststunden → speichern.
 - **Neue Mitarbeiterin / neuer Mitarbeiter:** Name in die nächste freie Zeile → speichern → Schichtplan + Tagesplan aktualisieren, speichern →
-  Stundenzettel NN aktualisieren, Stammdaten pflegen, speichern → Inhaltsverzeichnis aktualisieren, speichern → Platz NN aktualisieren, speichern.
+  MA NN (Admin) aktualisieren, Stammdaten pflegen, speichern → Inhaltsverzeichnis aktualisieren, speichern → MA NN aktualisieren, speichern.
 - **Alltag:** Mitarbeitende speichern ihre Platz-Datei → Steuerer aktualisiert Schichtplan (+ speichern) und Tagesplan; für Stundenkonten zusätzlich
   Stundenzettel aktualisieren.
 
-Test Paket V8 beim Arbeitgeber (35 Plätze, Inhaltsverzeichnis mit 35 Testnamen „Mustermann, …“ vorbelegt):
+Test Paket V9 beim Arbeitgeber (V8 mit neuen Dateinamen) (35 Plätze, Inhaltsverzeichnis mit 35 Testnamen „Mustermann, …“ vorbelegt):
 - [ ] Erstes Mal genau nach der Reihenfolge oben (Schritte 1–9); alle Kopien angelegt.
 - [ ] Schichtplan: 35 Testnamen nach Nachname, Zeiten 11:00 (Vorlage); Tagesplan: Namen in der Reihenfolge des Inhaltsverzeichnisses.
-- [ ] Stundenzettel 05: Name „Mustermann, …“ aus Zeile 5, Tagesliste gefüllt.
-- [ ] Platz 05: Titel mit Namen, oben Reststunden.
-- [ ] Eine Kopie falsch benennen (z. B. „Platz 5.xlsx“) → oben rote Warnung „Dateiname falsch“; danach wieder richtig benennen.
+- [ ] MA 05 (Admin): Name „Mustermann, …“ aus Zeile 5, Tagesliste gefüllt.
+- [ ] MA 05: Titel mit Namen, oben Reststunden.
+- [ ] Eine Kopie falsch benennen (z. B. „MA 5.xlsx“) → oben rote Warnung „Dateiname falsch“; danach wieder richtig benennen.
 - [ ] Neuer Name: Zeile 5 im Inhaltsverzeichnis ändern (nur im Test!) → speichern → Schichtplan aktualisieren → neuer Name erscheint.
-- [ ] Änderung durchreichen: in Platz 05 Urlaub am 04.01. → speichern → Schichtplan aktualisieren, speichern → Stundenzettel 05 aktualisieren → Urlaub.
+- [ ] Änderung durchreichen: in MA 05 Urlaub am 04.01. → speichern → Schichtplan aktualisieren, speichern → MA 05 (Admin) aktualisieren → Urlaub.
 - [ ] Prüfen, ob irgendwo `#BEZUG!` erscheint oder „Workbook Links“ grau wird.
 
 ### 10a. Geplanter Umbau: Eingabe-Datei (offen) + Stundenzettel (privat) – Entscheidungen vom 27.11.2026

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Prüft die ganze Excel-Kette (Vorlagen-Prinzip, Stand V8) mit LibreOffice.
 
-Aufbau: Ordner „Schichtplanung“ (offen: Platz 01 … , 001 MA-Tagesplan, 002 Schichtplan) und „Steuerung“ (privat:
-Stundenzettel 01 … , 000 Inhaltsverzeichnis). Platz-/Stundenzettel-Dateien sind unveränderte KOPIEN je einer Vorlage und
+Aufbau: Ordner „Schichtplanung“ (offen: MA 01 … , 001 MA-Tagesplan, 002 Schichtplan) und „Steuerung“ (privat:
+MA 01 (Admin) … , 000 Inhaltsverzeichnis). Eingabe-Dateien/Stundenzettel sind unveränderte KOPIEN je einer Vorlage und
 erkennen ihre Nummer am Dateinamen. Namen stehen nur im Inhaltsverzeichnis.
 Ablauf (bildet Excel nach – Excel liest bei geschlossenen Dateien die GESPEICHERTEN Werte):
-  1. Paket mit 4 Plätzen erzeugen (Anna, Ben mit Testwerten, Cora ohne, Platz 04 frei)
+  1. Paket mit 4 Plätzen erzeugen (Anna, Ben mit Testwerten, Cora ohne, MA 04 frei)
   1b. Verknüpfungen liefern Fehler → kein #BEZUG!, sondern „keine Vorgabe“/leer; falscher Dateiname → Warnung
   2. Eingabe-Dateien und Stundenzettel einmal speichern (noch ohne Aktualisieren) → „noch keine Vorgabe“
   3. Inhaltsverzeichnis aktualisieren (Vorgaben der Stundenzettel) → speichern
@@ -35,12 +35,12 @@ open(os.path.join(PROFIL, 'user', 'registrymodifications.xcu'), 'w').write('''<?
 <item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="BlockUntrustedRefererLinks" oor:op="fuse"><value>false</value></prop></item>
 <item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="MacroSecurityLevel" oor:op="fuse"><value>0</value></prop></item>
 </oor:items>''')
-MA = ['Beispiel, Anna', 'Test, Ben', 'Abel, Cora']           # Platz 01, 02, 03; Platz 04 frei
+MA = ['Beispiel, Anna', 'Test, Ben', 'Abel, Cora']           # MA 01, 02, 03; MA 04 frei
 subprocess.run([sys.executable, os.path.join(HIER, 'plaene-erzeugen.py'), '--ordner', ORDNER, '--plaetze', '4',
                 '--wochen', '1', '--tage', '5', '--mitarbeiter', *MA, '--kopien', '--beispieldaten'], check=True)
 IV, TP, SP = '000 Inhaltsverzeichnis.xlsx', '001 MA-Tagesplan.xlsx', '002 Schichtplan.xlsx'
-PL = [f'Platz {i:02d}.xlsx' for i in range(1, 5)]
-SZ = [f'Stundenzettel {i:02d}.xlsx' for i in range(1, 5)]
+PL = [f'MA {i:02d}.xlsx' for i in range(1, 5)]
+SZ = [f'MA {i:02d} (Admin).xlsx' for i in range(1, 5)]
 
 
 def pv(n, v):
@@ -182,16 +182,24 @@ for datei in (O + SP, O + TP):
     d.close(True)
 
 print('--- Falscher Dateiname')
-shutil.copy(pfad(O + PL[0]), pfad(O + 'Platz 01 - Kopie.xlsx'))
-d = eingabe_speichern(O + 'Platz 01 - Kopie.xlsx')
-pruefe('Eingabe „Platz 01 - Kopie“: Warnung', wert(d, 'Dateneingabe', 'A4')[:30], 'Achtung: Dateiname falsch oder')
-pruefe('Eingabe „Platz 01 - Kopie“: Nr. 0', wert(d, 'Listen', 'O10'), '0')
+shutil.copy(pfad(O + PL[0]), pfad(O + 'MA 01 - Kopie.xlsx'))
+d = eingabe_speichern(O + 'MA 01 - Kopie.xlsx')
+pruefe('Eingabe „MA 01 - Kopie“: Warnung', wert(d, 'Dateneingabe', 'A4')[:30], 'Achtung: Dateiname falsch oder')
+pruefe('Eingabe „MA 01 - Kopie“: Nr. 0', wert(d, 'Listen', 'O10'), '0')
 d.close(True)
-shutil.copy(pfad(P + SZ[0]), pfad(P + 'Stundenzettel 1a.xlsx'))
-d = rechnen_speichern(P + 'Stundenzettel 1a.xlsx')
-pruefe('Stundenzettel „1a“: Warnung', wert(d, 'Stammdaten', 'D3')[:15], 'Dateiname falsc')
+shutil.copy(pfad(P + SZ[0]), pfad(P + 'MA 1a (Admin).xlsx'))
+d = rechnen_speichern(P + 'MA 1a (Admin).xlsx')
+pruefe('Stundenzettel „MA 1a (Admin)“: Warnung', wert(d, 'Stammdaten', 'D3')[:15], 'Dateiname falsc')
 d.close(True)
-for f in (O + 'Platz 01 - Kopie.xlsx', P + 'Stundenzettel 1a.xlsx'): os.remove(pfad(f))
+shutil.copy(pfad(O + PL[0]), pfad(O + 'MA 01 (Admin).xlsx'))
+d = eingabe_speichern(O + 'MA 01 (Admin).xlsx')
+pruefe('Eingabe mit Admin-Namen: Nr. 0 (Verwechslung erkannt)', wert(d, 'Listen', 'O10'), '0')
+d.close(True)
+shutil.copy(pfad(P + SZ[0]), pfad(P + 'MA 01.xlsx'))
+d = rechnen_speichern(P + 'MA 01.xlsx')
+pruefe('Stundenzettel ohne „(Admin)“: Nr. 0 (Verwechslung erkannt)', wert(d, 'Daten', 'B2'), '0')
+d.close(True)
+for f in (O + 'MA 01 - Kopie.xlsx', P + 'MA 1a (Admin).xlsx', O + 'MA 01 (Admin).xlsx', P + 'MA 01.xlsx'): os.remove(pfad(f))
 
 # 2. Vorlagen-Kopien einmal speichern (wie der Nutzer: öffnen, speichern) – noch ohne Aktualisieren
 print('--- Erstes Speichern (ohne Aktualisieren)')
@@ -216,13 +224,13 @@ for i, f in enumerate(SZ):
 # 3. Inhaltsverzeichnis: Vorgaben aus den Stundenzetteln
 print('--- Inhaltsverzeichnis')
 ivl = openpyxl.load_workbook(pfad(P + IV))['Inhaltsverzeichnis']
-pruefe('Inhaltsverzeichnis: Klick-Link', ivl['D5'].hyperlink.target, 'Stundenzettel 02.xlsx')
+pruefe('Inhaltsverzeichnis: Klick-Link', ivl['D5'].hyperlink.target, 'MA 02 (Admin).xlsx')
 pruefe('Inhaltsverzeichnis: Name-Feld entsperrt', ivl['B4'].protection.locked, False)
 aktualisieren_wie_excel(P + IV)
 d = rechnen_speichern(P + IV)
 for i, n in enumerate(MA + ['']):
     pruefe(f'Inhaltsverzeichnis Zeile {i + 1}', ' | '.join(wert(d, 'Inhaltsverzeichnis', f'{c}{4 + i}') for c in 'ABCD'),
-           f'{i + 1} | {n} | Platz {i + 1:02d} | Stundenzettel {i + 1:02d}')
+           f'{i + 1} | {n} | MA {i + 1:02d} | MA {i + 1:02d} (Admin)')
 pruefe('Vorgaben Zeile 2: Name / Jahr / Urlaub', ' / '.join(wert(d, 'Vorgaben', f'{c}3') for c in 'BCD'), 'Test, Ben / 2027 / 30')
 pruefe('Vorgaben Zeile 4 (frei): Name leer', wert(d, 'Vorgaben', 'B5'), '')
 d.close(True)
@@ -261,10 +269,10 @@ aktualisieren_wie_excel(O + TP)
 tp = oeffnen(O + TP); tp.calculateAll()
 print('--- MA-Tagesplan (nach Platz-Nummer)')
 T = lambda d, z: wert(tp, d, z)
-pruefe('04.01. Zeile 1 = Platz 01 Vorname', T('04.01.2027', 'B3'), 'Anna')
+pruefe('04.01. Zeile 1 = MA 01 Vorname', T('04.01.2027', 'B3'), 'Anna')
 pruefe('04.01. Zeile 1 Nachname', T('04.01.2027', 'C3'), 'Beispiel')
-pruefe('04.01. Zeile 2 = Platz 02', T('04.01.2027', 'C4'), 'Test')
-pruefe('04.01. Zeile 3 = Platz 03 (nicht alphabetisch)', T('04.01.2027', 'C5'), 'Abel')
+pruefe('04.01. Zeile 2 = MA 02', T('04.01.2027', 'C4'), 'Test')
+pruefe('04.01. Zeile 3 = MA 03 (nicht alphabetisch)', T('04.01.2027', 'C5'), 'Abel')
 pruefe('04.01. Zeile 4 frei', T('04.01.2027', 'C6'), '')
 pruefe('04.01. Anna Beginn', T('04.01.2027', 'D3'), '11:00')
 pruefe('04.01. Anna HO', T('04.01.2027', 'F3'), 'HO')
@@ -344,7 +352,7 @@ d = oeffnen(O + PL[0]); d.calculateAll()
 pruefe('Anna: Urlaubswarnung (Anspruch 0,25)', wert(d, 'Dateneingabe', 'A4').replace(',', '.'), 'Achtung: 1 Urlaubstage eingetragen – Anspruch: 0.25 Tage!')
 d.close(True)
 d = oeffnen(O + PL[3]); d.calculateAll()
-pruefe('Platz 04 (frei): Titel ohne Namen', wert(d, 'Dateneingabe', 'A1'), 'Dateneingabe 2027')
+pruefe('MA 04 (frei): Titel ohne Namen', wert(d, 'Dateneingabe', 'A1'), 'Dateneingabe 2027')
 d.close(True)
 
 # 7. Vertragsende: Ben im Januar ohne Vertrag → Eingabe-Datei „kein Vertrag“ → Schichtplan ohne Zeiten

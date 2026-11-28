@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """Erzeugt das Paket für den Abteilungsbetrieb (ohne Makros, nur Excel-Verknüpfungen) unter AUSGABE:
 
-  AUSGABE/Schichtplanung/  (alle Mitarbeiter)  „Platz 01.xlsx“ (Eingabe-Datei, Vorlage), „001 MA-Tagesplan.xlsx“, „002 Schichtplan.xlsx“
-  AUSGABE/Steuerung/       (nur Steuerer)      „Stundenzettel 01.xlsx“ (Vorlage), „000 Inhaltsverzeichnis.xlsx“
+  AUSGABE/Schichtplanung/  (alle Mitarbeiter)  „MA 01.xlsx“ (Eingabe-Datei, Vorlage), „001 MA-Tagesplan.xlsx“, „002 Schichtplan.xlsx“
+  AUSGABE/Steuerung/       (nur Steuerer)      „MA 01 (Admin).xlsx“ (Stundenzettel, Vorlage), „000 Inhaltsverzeichnis.xlsx“
 
 VORLAGEN-PRINZIP (Wunsch des Nutzers, 28.11.2026): Der Steuerer bekommt nur je EINE Eingabe-Datei und EINEN Stundenzettel und
-kopiert sie selbst („Platz 02.xlsx“ …, „Stundenzettel 02.xlsx“ …). Jede Datei liest ihre Nummer aus dem eigenen Dateinamen.
+kopiert sie selbst („MA 02.xlsx“ …, „MA 02 (Admin).xlsx“ …). Jede Datei liest ihre Nummer aus dem eigenen Dateinamen.
 Weil eine Excel-Verknüpfung fest auf EINE Datei zeigt, verbinden sich die Kopien nur mit den zwei Sammel-Dateien:
-  Platz NN (Blatt Export, roh)                  → 002 Schichtplan (Daten)  und  → 001 MA-Tagesplan (Daten)
+  MA NN (Blatt Export, roh)                     → 002 Schichtplan (Daten)  und  → 001 MA-Tagesplan (Daten)
   000 Inhaltsverzeichnis (Namen, vom Steuerer)  → 002 Schichtplan / 001 MA-Tagesplan (Namen)
-  002 Schichtplan (Daten, Mitarbeiter)          → Stundenzettel NN (eigene Spalten per INDEX)
-  Stundenzettel NN (Blatt Vorgaben)             → 000 Inhaltsverzeichnis (Blatt Vorgaben, Zeile NN)
-  000 Inhaltsverzeichnis (Vorgaben, Name)       → Platz NN (eigene Zeile per INDEX)
+  002 Schichtplan (Daten, Mitarbeiter)          → MA NN (Admin) (eigene Spalten per INDEX)
+  MA NN (Admin) (Blatt Vorgaben)                → 000 Inhaltsverzeichnis (Blatt Vorgaben, Zeile NN)
+  000 Inhaltsverzeichnis (Vorgaben, Name)       → MA NN (eigene Zeile per INDEX)
 Namen stehen NUR im Inhaltsverzeichnis. Niemand wird im laufenden Jahr überschrieben; Neue kommen in die nächste freie Zeile.
 
 Aufruf:
@@ -22,8 +22,8 @@ Aufruf:
   --tage N          Anzahl Tagesblätter (Werktage ohne Feiertage) ab 04.01.2027 (Standard: alle)
   --mitarbeiter     Namen für die ersten Zeilen des Inhaltsverzeichnisses (nur Testnamen – echte Namen trägt der Nutzer ein)
   --testnamen       füllt die übrigen Zeilen mit erfundenen Namen „Mustermann, <Vorname>“
-  --kopien          legt zusätzlich alle Kopien Platz 02 … / Stundenzettel 02 … an (für Tests; sonst macht das der Nutzer)
-  --beispieldaten   trägt in Platz 01 und 02 Testwerte ein (mit --kopien; nur für den Kettentest)
+  --kopien          legt zusätzlich alle Kopien MA 02 … / MA 02 (Admin) … an (für Tests; sonst macht das der Nutzer)
+  --beispieldaten   trägt in MA 01 und 02 Testwerte ein (mit --kopien; nur für den Kettentest)
 """
 import argparse, datetime as dt, os, shutil
 import openpyxl
@@ -43,7 +43,8 @@ BLAU, ORANGE, GELB = 'FF002D72', 'FFFF5910', 'FFFFF2CC'
 DATUM_LANG = '[$-407]dddd, d. mmmm yyyy'
 VORLAGEN = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'excel', 'vorlagen')
 OFFEN, PRIVAT = 'Schichtplanung', 'Steuerung'          # Ordnernamen (nebeneinander, gleiches Laufwerk)
-SZ, PLATZ = 'Stundenzettel ', 'Platz '                  # Dateiname-Anfang (+ Nummer 01 … 35)
+EIN = lambda i: f'MA {i:02d}.xlsx'                      # Eingabe-Datei der Mitarbeitenden (Ordner Schichtplanung)
+ADM = lambda i: f'MA {i:02d} (Admin).xlsx'              # Stundenzettel des Steuerers (Ordner Steuerung)
 IV, TP, SP = '000 Inhaltsverzeichnis.xlsx', '001 MA-Tagesplan.xlsx', '002 Schichtplan.xlsx'   # NICHT umbenennen (Ziel von Verknüpfungen)
 MAXP = 35                                              # muss zu vorlagen-bauen.py passen
 TESTVORNAMEN = ['Alva', 'Bosse', 'Cleo', 'Dario', 'Elin', 'Fiete', 'Greta', 'Hanno', 'Ida', 'Jarne', 'Kaja', 'Linus', 'Mila',
@@ -104,21 +105,21 @@ def regel(ws, bereich, formel, fill=None, font=None):
     ws.conditional_formatting.add(bereich, Rule(type='expression', dxf=dx, formula=[formel], stopIfTrue=True))
 
 
-# ---------------------------------------------------------------- Vorlagen (Platz 01, Stundenzettel 01) und Kopien
+# ---------------------------------------------------------------- Vorlagen (MA 01, MA 01 (Admin)) und Kopien
 def vorlagen_dateien(ordner, n_kopien, beispieldaten, testmuster=False):
-    """Platz 01.xlsx und Stundenzettel 01.xlsx (mit Verknüpfung auf die Sammel-Dateien). Mit n_kopien > 1 zusätzlich die
+    """MA 01.xlsx und MA 01 (Admin).xlsx (mit Verknüpfung auf die Sammel-Dateien). Mit n_kopien > 1 zusätzlich die
     Kopien 02 … n (wie der Nutzer sie im Explorer anlegt: unveränderte Kopie, nur anderer Dateiname)."""
     sz = openpyxl.load_workbook(os.path.join(VORLAGEN, 'Stundenzettel-Vorlage.xlsx'))
     externer_link(sz, f'../{OFFEN}/{SP}', ['Daten', 'Mitarbeiter'])
-    sz.save(os.path.join(ordner, PRIVAT, f'{SZ}01.xlsx'))
+    sz.save(os.path.join(ordner, PRIVAT, ADM(1)))
     wb = openpyxl.load_workbook(os.path.join(VORLAGEN, 'Eingabe.xlsx'))
     externer_link(wb, f'../{PRIVAT}/{IV}', ['Vorgaben'])
-    wb.save(os.path.join(ordner, OFFEN, f'{PLATZ}01.xlsx'))
+    wb.save(os.path.join(ordner, OFFEN, EIN(1)))
     for i in range(2, n_kopien + 1):
-        shutil.copy(os.path.join(ordner, PRIVAT, f'{SZ}01.xlsx'), os.path.join(ordner, PRIVAT, f'{SZ}{i:02d}.xlsx'))
-        shutil.copy(os.path.join(ordner, OFFEN, f'{PLATZ}01.xlsx'), os.path.join(ordner, OFFEN, f'{PLATZ}{i:02d}.xlsx'))
+        shutil.copy(os.path.join(ordner, PRIVAT, ADM(1)), os.path.join(ordner, PRIVAT, ADM(i)))
+        shutil.copy(os.path.join(ordner, OFFEN, EIN(1)), os.path.join(ordner, OFFEN, EIN(i)))
     for i in range(n_kopien if (beispieldaten or testmuster) else 0):
-        ziel = os.path.join(ordner, OFFEN, f'{PLATZ}{i + 1:02d}.xlsx')
+        ziel = os.path.join(ordner, OFFEN, EIN(i + 1))
         wb = openpyxl.load_workbook(ziel)
         m, d = wb['Musterwoche'], wb['Dateneingabe']
         if beispieldaten:
@@ -145,7 +146,7 @@ def vorlagen_dateien(ordner, n_kopien, beispieldaten, testmuster=False):
 # ---------------------------------------------------------------- Quellen
 def quellen(wb, N, nach_name=True):
     """Blätter „Mitarbeiter“ (Plätze, Reihenfolge), „Daten“ (versteckt: je Platz eine Verknüpfung auf das Blatt Export der
-    Eingabe-Datei „Platz NN.xlsx“, ROHE Gilt-Werte; Zeile 1 Name aus dem Inhaltsverzeichnis) und „Werte“ (versteckt: daraus
+    Eingabe-Datei „MA NN.xlsx“, ROHE Gilt-Werte; Zeile 1 Name aus dem Inhaltsverzeichnis) und „Werte“ (versteckt: daraus
     die Anzeige wie früher Export B–D: „abwesend“ statt Grund, nichts bei „kein Vertrag“). Namen SPDatum/SPWerte.
     Der Schichtplan dient zugleich als Sammelquelle für die Stundenzettel (Blätter Daten und Mitarbeiter).
     nach_name: Schichtplan nach Nachname sortiert; Tagesplan (False) fest nach Platz-Nummer (nichts verrutscht bei Neuen)."""
@@ -160,7 +161,7 @@ def quellen(wb, N, nach_name=True):
         for w in (da, we):
             w[f'A{r}'] = f'=WORKDAY(DATE({JAHR},1,1)-1,{k})'; w[f'A{r}'].number_format = 'DD.MM.YYYY'
     for s in range(1, N + 1):
-        nr = externer_link(wb, f'{PLATZ}{s:02d}.xlsx', ['Export'])
+        nr = externer_link(wb, EIN(s), ['Export'])
         c0 = 2 + (s - 1) * 3; B, C, D = L(c0), L(c0 + 1), L(c0 + 2)
         da.cell(1, c0).value = f'=[{iv}]Inhaltsverzeichnis!$B${3 + s}'
         da.cell(2, c0).value = f'=IFERROR(IF(OR(ISNUMBER({B}1),TRIM({B}1)=""),0,1),0)'
@@ -185,14 +186,14 @@ def quellen(wb, N, nach_name=True):
     # --- Mitarbeiter: Liste aller Plätze + Reihenfolge
     ma['A1'] = 'Mitarbeiter (Plätze)'; ma['A1'].font = Font(bold=True, size=14, color=BLAU)
     ma['A2'] = ('Die Namen kommen aus dem Inhaltsverzeichnis des Steuerers (Ordner „Steuerung“), die Zeiten aus den '
-                'Eingabe-Dateien „Platz 01.xlsx“ … (gleiche Nummer). Leere Zeile = freier Platz.')
+                'Eingabe-Dateien „MA 01.xlsx“ … (gleiche Nummer). Leere Zeile = freier Platz.')
     ma['A2'].alignment = Alignment(wrap_text=True, vertical='top'); ma.merge_cells('A2:L2'); ma.row_dimensions[2].height = 32
     for i, h in enumerate(['Nr.', 'Eingabe-Datei', 'Name', 'aktiv', 'Sortierschlüssel', 'Rang',
                            '', 'Position', 'Platz-Nr.', 'Name sortiert', 'Vorname', 'Nachname']):
         if h: kopf(ma.cell(3, 1 + i), h)
     for s in range(1, N + 1):
         r = 3 + s
-        ma[f'A{r}'] = s; ma[f'B{r}'] = f'{PLATZ}{s:02d}.xlsx'
+        ma[f'A{r}'] = s; ma[f'B{r}'] = EIN(s)
         c0 = L(2 + (s - 1) * 3)
         ma[f'C{r}'] = f'=IFERROR(IF(N(Daten!{c0}$2)=1,TRIM(Daten!{c0}$1),""),"")'
         ma[f'D{r}'] = f'=IFERROR(IF(N(Daten!{c0}$2)=1,1,0),0)'
@@ -335,26 +336,26 @@ def tagesplan(ordner, N, n_tage):
 def inhaltsverzeichnis(ordner, N, namen):
     """Steuerung/000 Inhaltsverzeichnis.xlsx – die EINE Quelle für die Namen (Spalte B, gelb, trägt der Steuerer ein) und
     Sammelstelle für die Vorgaben aller Stundenzettel (verstecktes Blatt „Vorgaben“, je Platz eine Verknüpfung auf das Blatt
-    Vorgaben von „Stundenzettel NN.xlsx“). Die Eingabe-Dateien holen sich daraus ihre Zeile."""
+    Vorgaben von „MA NN (Admin).xlsx“). Die Eingabe-Dateien holen sich daraus ihre Zeile."""
     wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'Inhaltsverzeichnis'
     ws['A1'] = 'Inhaltsverzeichnis – Mitarbeiter'; ws['A1'].font = Font(bold=True, size=14, color=BLAU)
     ws['A2'] = ('Namen hier eintragen (Nachname, Vorname) – nur hier, alle anderen Dateien übernehmen sie. Im laufenden Jahr '
                 'niemanden löschen oder überschreiben (auch nicht nach dem Ausscheiden); neue Mitarbeiter in die nächste freie Zeile. '
                 'Stundenzettel zum Aktualisieren besser im Explorer per Doppelklick öffnen (über den Link hier klappt „Aktualisieren“ nicht).')
     ws['A2'].alignment = Alignment(wrap_text=True, vertical='top'); ws.merge_cells('A2:D2'); ws.row_dimensions[2].height = 62
-    for i, h in enumerate(('Nr.', 'Mitarbeiter (Nachname, Vorname)', 'Eingabe-Datei', 'Stundenzettel')): kopf(ws.cell(3, 1 + i), h)
+    for i, h in enumerate(('Nr.', 'Mitarbeiter (Nachname, Vorname)', 'Eingabe-Datei', 'Stundenzettel (Admin)')): kopf(ws.cell(3, 1 + i), h)
     vg = wb.create_sheet('Vorgaben')
     for i, h in enumerate(['Nr.', 'Name', 'Jahr', 'Urlaub (Tage)', 'Soll (Sek.)']): vg.cell(1, 1 + i, h)
     for mo in range(12):
         for j, h in enumerate(('ohne Vertrag', 'Regel-Tag Sek.', '057 Sek.', '057 da')):
             vg.cell(1, 6 + 4 * mo + j, f'{mo + 1:02d} {h}')
     for s in range(1, N + 1):
-        r = 3 + s; datei = f'{SZ}{s:02d}.xlsx'
+        r = 3 + s; datei = ADM(s)
         ws[f'A{r}'] = s
         ws[f'B{r}'] = namen[s - 1] if s - 1 < len(namen) and namen[s - 1] else None
         ws[f'B{r}'].fill = PatternFill('solid', fgColor=GELB)
         ws[f'B{r}'].protection = openpyxl.styles.Protection(locked=False)
-        ws[f'C{r}'] = f'{PLATZ}{s:02d}'
+        ws[f'C{r}'] = EIN(s)[:-5]
         ws[f'D{r}'] = datei[:-5]; ws[f'D{r}'].hyperlink = datei; ws[f'D{r}'].font = Font(color='FF0563C1', underline='single')
         for c in 'ABCD': ws[f'{c}{r}'].border = rahmen
         ws[f'A{r}'].alignment = Alignment(horizontal='center')
@@ -369,7 +370,7 @@ def inhaltsverzeichnis(ordner, N, namen):
             for j in range(4):
                 vg.cell(z, 6 + 4 * mo + j).value = f'=[{nr}]Vorgaben!{col}{3 + j}'
     vg.sheet_state = 'hidden'
-    for c, w in zip('ABCD', (6, 40, 16, 22)): ws.column_dimensions[c].width = w
+    for c, w in zip('ABCD', (6, 40, 16, 24)): ws.column_dimensions[c].width = w
     ws.freeze_panes = 'A4'
     ws.protection.sheet = True
     wb.save(os.path.join(ordner, PRIVAT, IV))
