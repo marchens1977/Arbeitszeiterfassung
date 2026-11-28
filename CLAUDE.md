@@ -66,8 +66,7 @@ Wichtige Stellen in `index.html`:
   solange ein „Ändern“-Modus offen ist (`editing0/2/3/4`); dann erst nach dem Speichern (`setEditButton`).
   Netzabfragen im Offline-Helfer laufen mit `cache: 'no-cache'`, damit keine veraltete Datei aus dem Browser-Zwischenspeicher kommt.
 - Der Name unter dem App-Symbol muss der **volle** Name sein: `short_name` = „Arbeitszeiterfassung“.
-- Vorgehen für Änderungen: eigener Branch → Pull Request → Merge in `main`. Der Nutzer hat ausdrücklich erlaubt,
-  dass Claude PRs anlegt **und** zusammenführt, damit die neue Version sofort live ist.
+- Vorgehen für Änderungen: vorher fragen, ob direkt in `main` oder eigener Branch → Pull Request (den der Nutzer selbst merged).
 - Keine persönlichen Daten, Passwörter oder Schlüssel in Code, Commits oder dieses Tagebuch schreiben.
 - **Farben:** Mets-Blau `#002D72` (Hauptfarbe, Reiterleiste, Knopf „Ändern“, Überschriften, Monatszeilen) und
   Mets-Orange `#FF5910` (aktiver Reiter, Knopf „Speichern“ mit blauer Schrift, Akzentlinien, Uhrzeiger im Symbol).
@@ -137,7 +136,8 @@ Wichtige Stellen in `index.html`:
 
 - Der Nutzer ist **Programmier-Laie**: einfaches Deutsch, Fachbegriffe kurz erklären, kleine nummerierte Schritte.
 - Immer klar sagen, **was Claude übernimmt** und **was der Nutzer selbst tun muss**.
-- Claude übernimmt alles, was technisch möglich ist – inklusive Branch, Pull Request anlegen und Merge.
+- Claude übernimmt alles, was technisch möglich ist.
+- Vor jeder Code-Änderung fragen: direkt auf `main` speichern oder Branch mit Pull Request (den der Nutzer selbst merged)?
 - Hardware des Nutzers: nur ein **Samsung-Smartphone (Chrome)** und ein **Raspberry Pi 400**. Anleitungen darauf abstimmen.
 - Änderungen vor dem Live-Schalten automatisiert im Browser testen und das Ergebnis ehrlich berichten.
 
