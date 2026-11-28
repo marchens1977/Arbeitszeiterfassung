@@ -448,6 +448,11 @@ Test Paket V9 beim Arbeitgeber (V8 mit neuen Dateinamen) (35 Plätze, Inhaltsver
 - [ ] Neuer Name: Zeile 5 im Inhaltsverzeichnis ändern (nur im Test!) → speichern → Schichtplan aktualisieren → neuer Name erscheint.
 - [ ] Änderung durchreichen: in MA 05 Urlaub am 04.01. → speichern → Schichtplan aktualisieren, speichern → MA 05 (Admin) aktualisieren → Urlaub.
 - [ ] Prüfen, ob irgendwo `#BEZUG!` erscheint oder „Workbook Links“ grau wird.
+- [ ] Kennwort zum Öffnen (Wunsch von 2 Mitarbeitenden, ungetestet): bei „MA 05“ „Kennwort zum Öffnen“ setzen → Schichtplan und Tagesplan
+  aktualisieren → fragt Excel nach dem Kennwort (erwartet: je Datei einmal, also bei 2 Personen 4 Abfragen je Durchgang) und stimmen danach
+  die Werte? Abbrechen → alte Werte bleiben? Admin-Dateien lesen über den Schichtplan und sollten nicht fragen.
+- [ ] Vergleich: bei „MA 06“ nur „Kennwort zum Ändern“ setzen → Aktualisieren ohne Kennwort-Abfrage? (Empfehlung, wenn es nur ums
+  Nicht-Verändern geht; Schichtzeiten sind im Schicht-/Tagesplan ohnehin für alle sichtbar.)
 
 ### 10a. Geplanter Umbau: Eingabe-Datei (offen) + Stundenzettel (privat) – Entscheidungen vom 27.11.2026
 
