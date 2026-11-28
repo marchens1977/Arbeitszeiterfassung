@@ -20,6 +20,7 @@ Die App ist als installierbare App (PWA) eingerichtet und läuft auch offline.
 | `icons/` | App-Symbol (blaue Uhr) als SVG und PNG (192, 512, 512 maskable, 180 Apple) |
 | `excel/Arbeitszeiterfassung.xlsx` | Excel-Version der App (eigenständig, siehe Abschnitt 9) – **Hauptvorlage**, aus der die beiden Vorlagen unten gebaut werden |
 | `excel/vorlagen/Eingabe.xlsx`, `excel/vorlagen/Stundenzettel-Vorlage.xlsx` | Abgeleitete Vorlagen (NICHT von Hand ändern – `werkzeuge/vorlagen-bauen.py`); die Stundenzettel-Vorlage enthält Platzhalter-Verknüpfungen `[1]Export!…` und ist allein nicht benutzbar |
+| `excel/Programmeinsatzverfahren-Aenderung.md` | Änderungsmeldung zum bereits genehmigten Programmeinsatzverfahren (Excel, Stand V9) – Vorlage für den Nutzer, Platzhalter in [ ]; bei Änderungen am Excel-Paket mitpflegen |
 | `werkzeuge/` | Automatische Prüfungen (Tests) und Hilfsprogramme, siehe Abschnitt 8 |
 | `CLAUDE.md` | Dieses Tagebuch |
 
@@ -110,6 +111,7 @@ Wichtige Stellen in `index.html`:
 | 2026-11-27 | Test des großen Pakets V7 beim Arbeitgeber abgeschlossen (35 Testpersonen, schnell genug); Beobachtungen 2–6 im Tagebuch gesammelt (u. a. Verknüpfung geht bei falscher Reihenfolge verloren), Umsetzung in der nächsten Sitzung | – |
 | 2026-11-28 | Excel-Paket V8 „Vorlagen-Prinzip“ (Wunsch des Nutzers): Namen NUR im `000 Inhaltsverzeichnis` (Steuerer trägt ein, niemand wird überschrieben, Neue unten dazu); Eingabe-Dateien heißen fest „Platz 01–35“, Stundenzettel „01–35“ (seit V9: „MA 01“ / „MA 01 (Admin)“) und erkennen ihre Nummer am Dateinamen; Nutzer bekommt nur 5 Dateien und kopiert selbst; Verknüpfungen nur noch über die Sammel-Dateien (Inhaltsverzeichnis, `002 Schichtplan`); `001 MA-Tagesplan` nach Platz-Nummer; löst Beobachtung 4/5 (Kopien einer in Excel gespeicherten Vorlage). Kettentest neu (Stand V8) | direkt auf `main` |
 | 2026-11-28 | Paket V9: Dateinamen „MA 01–35.xlsx“ (Mitarbeitende) und „MA 01–35 (Admin).xlsx“ (Steuerer) statt „Platz“/„Stundenzettel“; Kettentest 112 Prüfpunkte; V8 ersetzt | direkt auf `main` |
+| 2026-11-28 | Änderungsmeldung zum bestehenden (bereits genehmigten) Programmeinsatzverfahren: `excel/Programmeinsatzverfahren-Aenderung.md`, per E-Mail an den Nutzer. Kernpunkt: gleiche Daten und Rechenregeln, neu sind Ablauf und Sichtbarkeit (Schicht-/Tagesplan); Kennwort zum Öffnen als Test aufgenommen | direkt auf `main` |
 
 ## 4. Offene Ideen / nächste Schritte
 
