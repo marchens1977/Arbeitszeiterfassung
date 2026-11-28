@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Baut aus der Hauptvorlage excel/Arbeitszeiterfassung.xlsx die zwei Vorlagen für den Abteilungsbetrieb:
 
-  excel/vorlagen/Eingabe.xlsx              – OFFENE Eingabe-Datei je Mitarbeiter (Ordner „Schichtplanung“):
-                                             Mitarbeiter (Name aus Dateiname, Urlaubsanspruch in Tagen), Musterwoche,
-                                             Dateneingabe, Urlaub in Tagen (mit Warnung) – KEINE Vertrags-/Stundendaten.
-  excel/vorlagen/Stundenzettel-Vorlage.xlsx – PRIVATER Stundenzettel je Mitarbeiter (Ordner „Steuerung“):
-                                             Stammdaten, Urlaub, Auswertung, Tagesliste. Holt die Einträge per Verknüpfung
-                                             aus der Eingabe-Datei. Die Verknüpfung setzt plaene-erzeugen.py je Mitarbeiter.
+  excel/vorlagen/Eingabe.xlsx              – OFFENE Eingabe-Datei (wird „Platz 01.xlsx“ … „Platz 35.xlsx“, Ordner „Schichtplanung“):
+                                             Musterwoche, Dateneingabe, Urlaub in Tagen (mit Warnung) – KEINE Vertrags-/Stundendaten.
+                                             Platz-Nummer aus dem Dateinamen; Name und Vorgaben aus „000 Inhaltsverzeichnis.xlsx“.
+  excel/vorlagen/Stundenzettel-Vorlage.xlsx – PRIVATER Stundenzettel (wird „Stundenzettel 01.xlsx“ …, Ordner „Steuerung“):
+                                             Stammdaten, Urlaub, Auswertung, Tagesliste. Nummer aus dem Dateinamen; Name und
+                                             Einträge aus „002 Schichtplan.xlsx“ (eigene Spalten per INDEX).
+Die Verknüpfungen selbst (externalLink) setzt plaene-erzeugen.py. Alle Kopien einer Vorlage sind gleich – deshalb zeigen
+sie nur auf die Sammel-Dateien, nie direkt aufeinander (siehe Kopf von plaene-erzeugen.py).
 
 Aufruf: python3 werkzeuge/vorlagen-bauen.py      (nach jeder Änderung an der Hauptvorlage erneut ausführen)
 """
@@ -25,6 +27,9 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 HAUPT = os.path.join(HIER, '..', 'excel', 'Arbeitszeiterfassung.xlsx')
 ZIEL = os.path.join(HIER, '..', 'excel', 'vorlagen')
 GRAU = PatternFill('solid', fgColor='FFD9D9D9')
+MAXP = 35                       # Plätze (Platz 01 … 35); Bereichsgrößen der Verknüpfungen hängen daran
+IV_LETZTE = 'BA'                # letzte Spalte im Blatt Vorgaben des Inhaltsverzeichnisses (5 + 12 × 4 = 53)
+SP_LETZTE = 'DB'                # letzte Spalte im Blatt Daten des Schichtplans (1 + 3 × 35 = 106)
 s = Side(style='thin', color='FFBFBFBF'); RAND = Border(left=s, right=s, top=s, bottom=s)
 ROT = DifferentialStyle(font=Font(color='FF9C0006', bold=True),
                         fill=PatternFill(bgColor='FFFFC7CE', fgColor='FFFFC7CE', fill_type='solid'))
@@ -70,22 +75,30 @@ def eingabe():
     ls, d, u, m, ex = wb['Listen'], wb['Dateneingabe'], wb['Urlaub'], wb['Musterwoche'], wb['Export']
     st = wb['Stammdaten']
 
-    # --- Vorgaben aus dem Stundenzettel (versteckt; nur einfache Bezüge auf die Verknüpfung)
+    # --- Vorgaben aus dem Inhaltsverzeichnis (versteckt). Alle Eingabe-Dateien sind Kopien EINER Vorlage und zeigen auf
+    # dasselbe Ziel („000 Inhaltsverzeichnis.xlsx“, Blatt Vorgaben: eine Zeile je Platz). Die eigene Zeile ergibt sich aus der
+    # Platz-Nummer im Dateinamen („Platz 07.xlsx“ → 7, Listen!O10). Layout dort: A Nr, B Name, C Jahr, D Urlaubsanspruch,
+    # E Soll (Sek.), ab F je Monat 4 Spalten (ohne Vertrag, Regel-Tag Sek., 057 Sek., 057 vorhanden).
     vg = wb.create_sheet('Vorgaben')
-    vg['A1'] = '=[1]Vorgaben!A1'; vg['B1'] = '=[1]Vorgaben!B1'; vg['C1'] = '=[1]Vorgaben!C1'
+    hol = lambda sp: f'=INDEX([1]Vorgaben!$A$2:${IV_LETZTE}${1 + MAXP},Listen!$O$10,{sp})'
+    vg['A1'] = hol(3); vg['B1'] = hol(4); vg['C1'] = hol(5); vg['D1'] = hol(2)
     for i in range(12):
         col = chr(65 + i)
         for r in (3, 4, 5, 6):
-            vg[f'{col}{r}'] = f'=[1]Vorgaben!{col}{r}'
-    vg['A7'] = ('Kommt aus dem Stundenzettel des Steuerers: A1 Jahr, B1 Urlaubsanspruch (Tage), C1 Soll (Sek.), Zeile 3 ohne Vertrag (1), '
-                'Zeile 4 Regel-Tag (Sek.), Zeile 5 Stundenabrechnung 057 (Sek.), Zeile 6 057 vorhanden (1)')
+            vg[f'{col}{r}'] = hol(6 + 4 * i + (r - 3))
+    vg['A7'] = ('Kommt aus dem Inhaltsverzeichnis des Steuerers (Zeile = Platz-Nummer aus dem Dateinamen): A1 Jahr, '
+                'B1 Urlaubsanspruch (Tage), C1 Soll (Sek.), D1 Name, Zeile 3 ohne Vertrag (1), Zeile 4 Regel-Tag (Sek.), '
+                'Zeile 5 Stundenabrechnung 057 (Sek.), Zeile 6 057 vorhanden (1)')
     vg.sheet_state = 'hidden'; vg.protection.sheet = True
 
     # --- Hilfswerte in „Listen“ (versteckt)
     ls['N1'] = 'Eingabe-Datei: Hilfswerte'; ls['N1'].font = Font(bold=True)
     ls['O2'] = '=CELL("filename",A1)'
     ls['O3'] = st['H3'].value.replace('G3', 'O2')
-    ls['O4'] = st['B3'].value.replace('H3', 'O3')
+    ls['O4'] = '=IFERROR(IF(OR(ISNUMBER(Vorgaben!D1),Vorgaben!D1=""),"",TRIM(Vorgaben!D1)),"")'   # Name aus dem Inhaltsverzeichnis
+    # Platz-Nummer aus dem Dateinamen „Platz 07.xlsx“ (0 = Dateiname falsch oder nicht lesbar)
+    ls['O10'] = (f'=IFERROR(IF(LEFT(O3,6)="Platz ",IF(AND(VALUE(TRIM(MID(O3,7,FIND(".",O3&".",7)-7)))>=1,'
+                 f'VALUE(TRIM(MID(O3,7,FIND(".",O3&".",7)-7)))<={MAXP}),VALUE(TRIM(MID(O3,7,FIND(".",O3&".",7)-7))),0),0),0)')
     # IFERROR: kommt über die Verknüpfung ein Fehler (Stundenzettel noch nie gespeichert/nicht erreichbar), gilt „keine Vorgabe“
     ls['O5'] = '=IFERROR(IF(N(Vorgaben!A1)>2000,Vorgaben!A1,2027),2027)'
     ls['O6'] = '=IFERROR(IF(ISNUMBER(Vorgaben!B1),Vorgaben!B1,0),0)'
@@ -93,7 +106,8 @@ def eingabe():
     ls['O8'] = '=SUM(T2:T13)'
     ls['O9'] = '=O7-O8'
     for t, r in (('Pfad', 2), ('Dateiname', 3), ('Mitarbeiter', 4), ('Jahr', 5), ('Urlaubsanspruch (0 = unbekannt)', 6),
-                 ('Soll Sek. (0 = unbekannt)', 7), ('Ist Sek. (Plan bzw. 057)', 8), ('Rest Sek.', 9)):
+                 ('Soll Sek. (0 = unbekannt)', 7), ('Ist Sek. (Plan bzw. 057)', 8), ('Rest Sek.', 9),
+                 ('Platz-Nr. (0 = Dateiname falsch)', 10)):
         ls[f'N{r}'] = t
     for i in range(12):
         r, col = 2 + i, chr(65 + i)
@@ -137,8 +151,10 @@ def eingabe():
     rot = DifferentialStyle(font=Font(color='FFC00000', bold=True))
     d.conditional_formatting.add('H3:J3', Rule(type='expression', dxf=gruen, formula=['AND(SollSek<>0,Listen!$O$9<0)']))
     d.conditional_formatting.add('H3:J3', Rule(type='expression', dxf=rot, formula=['AND(SollSek<>0,Listen!$O$9>0)']))
-    d['A4'] = ('=IF(AND(UrlaubAnspruchTage>0,COUNTIF(G6:G267,"Urlaub")>UrlaubAnspruchTage),"Achtung: "&COUNTIF(G6:G267,"Urlaub")&'
-               '" Urlaubstage eingetragen – Anspruch: "&UrlaubAnspruchTage&" Tage!","")')
+    d['A4'] = (f'=IF(Listen!$O$10=0,"Achtung: Dateiname falsch oder nicht lesbar – die Datei muss „Platz 01.xlsx“ … „Platz {MAXP}.xlsx“ '
+               f'heißen (Excel am PC).",'
+               'IF(AND(UrlaubAnspruchTage>0,COUNTIF(G6:G267,"Urlaub")>UrlaubAnspruchTage),"Achtung: "&COUNTIF(G6:G267,"Urlaub")&'
+               '" Urlaubstage eingetragen – Anspruch: "&UrlaubAnspruchTage&" Tage!",""))')
     d.merge_cells('A4:J4'); d['A4'].font = Font(bold=True, color='FFC00000')
     d.conditional_formatting.add('D6:D267', Rule(type='expression', dxf=ROT, stopIfTrue=True,
                                  formula=['AND(UrlaubAnspruchTage>0,$G6="Urlaub",COUNTIF($G$6:$G6,"Urlaub")>UrlaubAnspruchTage)']))
@@ -188,11 +204,20 @@ def stundenzettel():
     blatt_umbenennen(wb, 'Dateneingabe', 'Tagesliste')
     wb['Musterwoche'].sheet_state = 'hidden'
 
+    # Einträge kommen aus dem Schichtplan (der sammelt alle Eingabe-Dateien). Alle Stundenzettel sind Kopien EINER Vorlage;
+    # die eigenen Spalten ergeben sich aus der Nummer im Dateinamen („Stundenzettel 07.xlsx“ → 7, Daten!B2).
+    st = wb['Stammdaten']
     da = wb.create_sheet('Daten')
-    da['A1'] = 'Name'; da['A3'] = 'Werktag → Start / Pause / Anmerkung'
-    da['B1'] = '=[1]Export!$B$1'
+    da['A1'] = 'Name'; da['A2'] = 'Nr. (Dateiname)'; da['A3'] = 'Werktag → Start / Pause / Anmerkung (roh)'
+    da['E1'] = '=CELL("filename",A1)'
+    da['F1'] = st['H3'].value.replace('G3', 'E1')
+    n_aus = 'VALUE(TRIM(MID(F1,15,FIND(".",F1&".",15)-15)))'
+    da['B2'] = f'=IFERROR(IF(LEFT(F1,14)="Stundenzettel ",IF(AND({n_aus}>=1,{n_aus}<={MAXP}),{n_aus},0),0),0)'
+    da['B1'] = f'=INDEX([1]Mitarbeiter!$C$4:$C${3 + MAXP},$B$2)'
     for r in range(4, 266):
-        da[f'B{r}'] = f'=[1]Export!E{r}'; da[f'C{r}'] = f'=[1]Export!F{r}'; da[f'D{r}'] = f'=[1]Export!G{r}'
+        k = r - 3
+        for j, col in enumerate('BCD'):
+            da[f'{col}{r}'] = f'=INDEX([1]Daten!$B$4:${SP_LETZTE}$265,{k},$B$2*3-{2 - j})'
     da.sheet_state = 'hidden'
 
     t = wb['Tagesliste']
@@ -218,15 +243,15 @@ def stundenzettel():
     wb['Urlaub']['A1'] = '="Urlaubsübersicht & Abgleich"' + NAME
     wb['Auswertung']['A1'] = '="Auswertung & Jahresbilanz "&Jahr' + NAME
     wb['Musterwoche']['A1'] = '="Musterwoche (Montag bis Freitag)"' + NAME
-    t['A2'] = ('Diese Liste kommt automatisch aus der Eingabe-Datei des Mitarbeiters (Ordner „Schichtplanung“). Hier nichts '
-               'eintragen – Änderungen in der Eingabe-Datei vornehmen, dort speichern, dann hier Daten → Links bearbeiten → '
-               '„Werte aktualisieren“. Grau „kein Vertrag“ = Monat mit Jahres-Basis 0.')
+    t['A2'] = ('Diese Liste kommt automatisch aus der Eingabe-Datei des Mitarbeiters (gleiche Nummer, Ordner „Schichtplanung“) '
+               'über den Schichtplan. Hier nichts eintragen – Eingabe-Datei speichern, Schichtplan aktualisieren und speichern, '
+               'dann hier Daten → Links bearbeiten → „Werte aktualisieren“. Grau „kein Vertrag“ = Monat mit Jahres-Basis 0.')
 
-    st = wb['Stammdaten']
-    st['B3'] = '=IFERROR(IF(ISNUMBER(Daten!B1),"",Daten!B1),"")'
+    st['B3'] = '=IFERROR(IF(OR(ISNUMBER(Daten!B1),Daten!B1=""),"",Daten!B1),"")'
     st['G3'] = None; st['H3'] = None
-    st['D3'] = ('=IF(B3="","Noch keine Daten – Verknüpfung zur Eingabe-Datei aktualisieren (Daten → Links bearbeiten → '
-                'Werte aktualisieren).","")')
+    st['D3'] = (f'=IF(Daten!B2=0,"Dateiname falsch oder nicht lesbar – die Datei muss „Stundenzettel 01.xlsx“ … „Stundenzettel {MAXP}.xlsx“ heißen.",'
+                'IF(B3="","Noch kein Name – im Inhaltsverzeichnis eintragen, dann Schichtplan und hier aktualisieren '
+                '(Daten → Links bearbeiten → Werte aktualisieren).",""))')
 
     # Vorgaben für die Eingabe-Datei (die liest dieses Blatt per Verknüpfung; nur direkte Zellbezüge, keine Namen)
     v = wb.create_sheet('Vorgaben')
